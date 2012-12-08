@@ -859,7 +859,8 @@ hub_handle_command(char *buf, uint32_t len)
         DCUserInfo *ui;
         char *conv_nick = hub_to_main_string(buf+6);
 
-        flag_putf(DC_DF_JOIN_PART, "User %s quits.\n", quotearg(conv_nick));
+        // I don't want these messages.
+        //flag_putf(DC_DF_JOIN_PART, "User %s quits.\n", quotearg(conv_nick));
         ui = hmap_remove(hub_users, conv_nick);
         if (ui == NULL) {
             /* Some hubs print quit messages for users that never joined,

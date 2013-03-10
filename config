@@ -1,0 +1,28 @@
+set sharedir /home/dilawar/Public/share/
+set downloaddir /home/dilawar/Public/down/
+set filesystem_charset utf-8
+set hub_charset cp1251
+set active on
+set listenaddr 10.14.42.7
+set display searchresult
+set listingdir /home/dilawar/Public/temp/
+set auto_reconnect on
+set nick BlahKing
+set description "Microdc2 rocks!"
+set speed LAN(T3)
+set slots 4
+
+connect 10.129.141.120:411
+connect 10.129.141.120:411
+connect 10.26.2.201:411
+connect 10.129.34.54:411
+connect 10.6.171.18:411
+connect 10.13.40.2:411
+connect 10.13.11.2:411
+connect 10.6.131.109:411
+connect 10.4.70.70:411
+connect 10.2.212.85:411
+connect 10.5.132.23:412
+connect 10.7.40.97:411
+connect 10.4.71.72:411
+connect 10.6.10.7:411       

@@ -70,6 +70,7 @@ static void var_set_tag(DCVariable *var, int argc, char **argv);
 static void var_set_speed(DCVariable *var, int argc, char **argv);
 static void var_set_email(DCVariable *var, int argc, char **argv);
 static void var_set_download_dir(DCVariable *var, int argc, char **argv);
+static void var_set_share_dir(DCVariable *var, int argc, char **argv);
 static void var_set_listing_dir(DCVariable *var, int argc, char **argv);
 static void var_set_slots(DCVariable *var, int argc, char **argv);
 static char *var_get_slots(DCVariable *var);
@@ -268,15 +269,14 @@ static DCVariable variables[] = {
         NULL,
         "The optional password to pass to the hub."
     },
-    /*
-        {
-          "sharedir",
-          var_get_string, var_set_share_dir, &share_dir,
-          local_path_completion_generator,
-          NULL,
-          "Directory containing files to share (or a single file to share)"
-        },
-    */
+    
+    {
+      "sharedir",
+      var_get_string, var_set_share_dir, &share_dir,
+      local_path_completion_generator,
+      NULL,
+      "Directory containing files to share (or a single file to share)"
+    },
     {
         "slots",
         var_get_slots, var_set_slots, &my_ul_slots,
@@ -453,6 +453,26 @@ var_set_download_dir(DCVariable *var, int argc, char **argv)
     }
     free(download_dir);
     download_dir = xstrdup(argv[1]);
+}
+static void
+var_set_share_dir(DCVariable *var, int argc, char **argv)
+{
+    struct stat st;
+
+    if (argc > 2) {
+        warn(_("too many arguments\n"));
+        return;
+    }
+    if (stat(argv[1], &st) < 0) {
+        screen_putf(_("%s: Cannot get file status - %s\n"), quotearg(argv[1]), errstr);
+        return;
+    }
+    if (!S_ISDIR(st.st_mode)) {
+        screen_putf(_("%s: Not a directory\n"), quotearg(argv[1]));
+        return;
+    }
+    free(share_dir);
+    share_dir = xstrdup(argv[1]);
 }
 
 static void

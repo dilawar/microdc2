@@ -45,7 +45,8 @@ LIBS="$LIBS $READLINE_LIBS"
 AC_CHECK_FUNC(_rl_mark_modified_lines, [AC_DEFINE([HAVE__RL_MARK_MODIFIED_LINES])])
 LIBS="$OLD_LIBS"
 AH_TEMPLATE([HAVE_LIBXML2], [Define if libxml2 is installed])
-PKG_CHECK_MODULES(LIBXML2, libxml-2.0 > 2.6.16, AC_DEFINE([HAVE_LIBXML2]), AC_MSG_WARN([XML libxml2 library version greater than 2.6.16 is required to support XML filelists]))
+PKG_CHECK_MODULES(LIBXML2, libxml-2.0 > 2.6.16, AC_DEFINE([HAVE_LIBXML2]),
+AC_MSG_ERROR([XML libxml2 library version greater than 2.6.16 is required to support XML filelists]))
 
 # Checks for header files
 

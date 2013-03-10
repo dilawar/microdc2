@@ -630,7 +630,9 @@ user_result_fd_readable(DCUserConn *uc)
             break;
         case DC_MSG_TRANSFER_START: {
             char *share_filename, *local_filename;
-            msgq_get(uc->get_mq, MSGQ_INT, &id, MSGQ_STR, &local_filename, MSGQ_STR, &share_filename, MSGQ_INT64, &uc->transfer_start, MSGQ_INT64, &uc->transfer_total, MSGQ_END);
+
+            msgq_get(uc->get_mq, MSGQ_INT, &id, MSGQ_STR, &local_filename, MSGQ_STR, &share_filename, MSGQ_INT64
+                , &uc->transfer_start, MSGQ_INT64, &uc->transfer_total, MSGQ_END);
             if (uc->transfer_start != 0) {
                 flag_putf(DC_DF_CONNECTIONS, _("%s: Starting %s of %s (%" PRIu64 " of %" PRIu64 " %s).\n"),
                           quotearg_n(0, uc->info->nick),
@@ -908,11 +910,8 @@ void
 add_search_result(struct sockaddr_in *addr, char *results, uint32_t resultlen)
 {
     DCUDPMessage *msg;
-    /*
     int res = 0;
-    */
 
-    /*
     if (search_udpmsg_out->cur == 0) {
     	res = sendto(search_socket, results, resultlen, 0, (struct sockaddr *) addr, sizeof(struct sockaddr_in));
         if (res == 0 || (res < 0 && errno != EAGAIN)) {
@@ -922,7 +921,6 @@ add_search_result(struct sockaddr_in *addr, char *results, uint32_t resultlen)
         if (res == resultlen)
             return;
     }
-    */
 
     msg = xmalloc(sizeof(DCUDPMessage)+resultlen);
     msg->addr = *addr;

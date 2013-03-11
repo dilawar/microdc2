@@ -38,10 +38,12 @@ AC_PROG_RANLIB
 #ACX_PTHREAD
 #ACX_PTHREAD([], [AC_MSG_ERROR([POSIX Threads is required to build and run this project.])])
 AC_LIB_READLINE([], [AC_MSG_ERROR([GNU Readline is required to build and run this project.])])
+AC_LIB_CURSES([], [AC_MSG_ERROR([Curses is required to build and run this project.])])
+AC_LIB_SQLITE([], [AC_MSG_ERROR)[SQLITE is required.])])
 ### FIXME: move these to _rl_mark_modified_lines
 AH_TEMPLATE([HAVE__RL_MARK_MODIFIED_LINES], [Define if _rl_mark_modified_lines exists in -lreadline.])
 OLD_LIBS="$LIBS"
-LIBS="$LIBS $READLINE_LIBS"
+LIBS="$LIBS $READLINE_LIBS $CURSES_LIB $SQLITE_LIB"
 AC_CHECK_FUNC(_rl_mark_modified_lines, [AC_DEFINE([HAVE__RL_MARK_MODIFIED_LINES])])
 LIBS="$OLD_LIBS"
 AH_TEMPLATE([HAVE_LIBXML2], [Define if libxml2 is installed])

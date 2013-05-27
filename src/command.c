@@ -1847,37 +1847,8 @@ void sortedSearchResults(const DCSearchRequest* sd, DCSearchRequest* sortedRes)
     DCSearchResponse* sr = sd->responses->buf[maxIndex];
     /* insert it to sortedRes  */
     sortedRes->responses->buf[c] = sr;
+    sortedRes->responses->cur = arraySize;
   }
-
-  for (c = 0; c < arraySize; c++) 
-  {
-    char sizebuf[LONGEST_HUMAN_READABLE+1];
-    DCSearchResponse *sr = sortedRes->responses->buf[c];
-    char *n = NULL;
-    const char *t = "";
-    char *size_str = NULL;
-
-    n = translate_remote_to_local(sr->filename);
-    if (sr->filetype == DC_TYPE_DIR) {/* XXX: put into some function */
-      t = "/";
-    } 
-    else 
-    {
-      size_str = xasprintf(" (%s)", human_readable(sr->filesize, sizebuf
-            , human_suppress_point_zero|human_autoscale|human_base_1024|human_SI|human_B|human_space_before_unit
-            , 1, 1));
-    }
-
-    screen_putf("A : %d. %s %s%s%s\n", c+1, quotearg(sr->userinfo->nick), n, t, (size_str)?size_str:"");
-
-    if (size_str) 
-    {
-      free(size_str);
-    }
-
-    free(n);
-  }
-
 }
 
 static void
@@ -1926,6 +1897,9 @@ cmd_results(int argc, char **argv)
     /* These are our searches. */
     sd = our_searches->buf[c-1];
     
+    DCSearchRequest *sortedSd = (DCSearchRequest*) calloc(1, sizeof(DCSearchRequest));
+    sortedSearchResults(sd, sortedSd);
+    
     screen_putf(_("Search %d:\n"), c);
     for (c = 0; c < sd->responses->cur; c++) 
     {
@@ -1955,8 +1929,6 @@ cmd_results(int argc, char **argv)
       free(n);
     }
     
-    DCSearchRequest *sortedSd = (DCSearchRequest*) calloc(1, sizeof(DCSearchRequest));
-    sortedSearchResults(sd, sortedSd);
   }
   free(fullArgs);
 }

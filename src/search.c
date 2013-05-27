@@ -730,12 +730,47 @@ add_search_request(char *args)
    */
   if(NULL != strstr(args, "$$"))
   {
-    if(NULL != strstr(args, "video"))
+    if(NULL != strstr(args, "$$vi"))
     {
       char searchString[200];
       searchStringFromArg(searchString, args);
-      screen_putf("Searching for VIDEOS \n");
       return add_search_request_type(searchString, DC_SEARCH_VIDEO);
+    }
+    else if(NULL != strstr(args, "$$au"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_AUDIO);
+    }
+    else if(NULL != strstr(args, "$$do"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_DOCUMENTS);
+    }
+    else if(NULL != strstr(args, "$$fo"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_FOLDERS);
+    }
+    else if(NULL != strstr(args, "$$co"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_COMPRESSED);
+    }
+    else if(NULL != strstr(args, "$$ex"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_EXECUTABLES);
+    }
+    else if(NULL != strstr(args, "$$pi"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      return add_search_request_type(searchString, DC_SEARCH_PICTURES);
     }
     else 
     {

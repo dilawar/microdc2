@@ -210,7 +210,8 @@ struct _DCSearchSelection {
     DCSearchString *patterns;
 };
 
-struct _DCSearchRequest {
+struct _DCSearchRequest 
+{
     DCSearchSelection selection;
     time_t issue_time;
     PtrV *responses;

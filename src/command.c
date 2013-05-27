@@ -108,6 +108,13 @@ typedef struct _DCGetData DCGetData;
 typedef struct _DCCommand DCCommand;
 typedef struct _DCAliasCommand DCAliasCommand;
 typedef struct _DCBuiltinCommand DCBuiltinCommand;
+typedef struct _SizeIndex SizeIndex;
+
+struct _SizeIndex 
+{
+  uint64_t size;
+  uint32_t index;
+};
 
 struct _DCGetData {
     DCUserInfo *ui;
@@ -1787,66 +1794,171 @@ cmd_searchtth(int argc, char **argv)
     free(tmp);
 }
 
+
+/*-----------------------------------------------------------------------------
+ *  Modify this command such that results are returned in sorted order. And a
+ *  fraction of results are returned.
+ *-----------------------------------------------------------------------------*/
+void sortedSearchResults(const DCSearchRequest* sd, DCSearchRequest* sortedRes)
+{
+
+  /* Initialize the sortedRes  */
+  DCSearchSelection sel = sd->selection;
+  sortedRes->selection = sel;
+  sortedRes->issue_time = sd->issue_time;
+
+  PtrV prtV;
+  prtV.cur = sd->responses->cur;
+  prtV.max = sd->responses->max;
+  void* newBuf = (void*) calloc(sd->responses->cur, sizeof(void*));
+  prtV.buf = newBuf;
+
+  sortedRes->responses = &prtV;
+
+  screen_putf("Total no of results in original search : %d \n", sd->responses->cur); 
+  SizeIndex arraySizeIndex[sd->responses->cur];
+
+  uint32_t c, arraySize = 0;
+  for (c = 0; c < sd->responses->cur; c++) 
+  {
+    DCSearchResponse *sr = sd->responses->buf[c];
+    arraySizeIndex[c].index = c;
+    arraySizeIndex[c].size = sr->filesize;
+    arraySize++;
+  }
+
+  for(c = 0; c < arraySize; c++)
+  {
+    /* Find the maximum element. */
+    uint32_t maxIndex = 0;
+    uint64_t maxSize = 0;
+    uint32_t cc;
+    for(cc = 0; cc < arraySize; cc++)
+    {
+      /* get the index of max element */
+      if( arraySizeIndex[cc].size > maxSize)
+      {
+        maxSize = arraySizeIndex[cc].size;
+        maxIndex = arraySizeIndex[cc].index;
+      }
+    }
+    /*  reset the size at maxIndex to 0 */
+    arraySizeIndex[maxIndex].size = 0;
+    DCSearchResponse* sr = sd->responses->buf[maxIndex];
+    /* insert it to sortedRes  */
+    sortedRes->responses->buf[c] = sr;
+  }
+
+  for (c = 0; c < arraySize; c++) 
+  {
+    char sizebuf[LONGEST_HUMAN_READABLE+1];
+    DCSearchResponse *sr = sortedRes->responses->buf[c];
+    char *n = NULL;
+    const char *t = "";
+    char *size_str = NULL;
+
+    n = translate_remote_to_local(sr->filename);
+    if (sr->filetype == DC_TYPE_DIR) {/* XXX: put into some function */
+      t = "/";
+    } 
+    else 
+    {
+      size_str = xasprintf(" (%s)", human_readable(sr->filesize, sizebuf
+            , human_suppress_point_zero|human_autoscale|human_base_1024|human_SI|human_B|human_space_before_unit
+            , 1, 1));
+    }
+
+    screen_putf("A : %d. %s %s%s%s\n", c+1, quotearg(sr->userinfo->nick), n, t, (size_str)?size_str:"");
+
+    if (size_str) 
+    {
+      free(size_str);
+    }
+
+    free(n);
+  }
+
+}
+
 static void
 cmd_results(int argc, char **argv)
 {
-    uint32_t d;
-    char sizebuf[LONGEST_HUMAN_READABLE+1];
+  char* fullArgs = join_strings(argv+1, argc-1, ' ');
+  
+  uint32_t d;
+  char sizebuf[LONGEST_HUMAN_READABLE+1];
 
-    if (argc == 1) {
-        time_t now;
+  if (argc == 1) {
+    time_t now;
 
-        if (time(&now) == (time_t) -1) {
-            warn(_("Cannot get current time - %s\n"), errstr);
-            return;
-        }
-
-        for (d = 0; d < our_searches->cur; d++) {
-            DCSearchRequest *sd = our_searches->buf[d];
-            char *status;
-            char *spec;
-
-            spec = search_selection_to_string(&sd->selection);
-            status = sd->issue_time + SEARCH_TIME_THRESHOLD <= now
-                     ? _("Closed") : _("Open");
-            screen_putf(_("%d. %s (%s) Results: %d\n"), d+1, quotearg(spec),
-                        status, sd->responses->cur);
-        }
-        return;
+    if (time(&now) == (time_t) -1) 
+    {
+      warn(_("Cannot get current time - %s\n"), errstr);
+      return;
     }
 
-    for (d = 1; d < argc; d++) {
-        DCSearchRequest *sd;
-        uint32_t c;
+    for (d = 0; d < our_searches->cur; d++) {
+      DCSearchRequest *sd = our_searches->buf[d];
+      char *status;
+      char *spec;
 
-        if (!parse_uint32(argv[d], &c) || c == 0 || c-1 >= our_searches->cur) {
-            screen_putf(_("%s: Invalid search index.\n"), quotearg(argv[d]));
-            continue;
-        }
-        sd = our_searches->buf[c-1];
-        screen_putf(_("Search %d:\n"), c);
-        for (c = 0; c < sd->responses->cur; c++) {
-            DCSearchResponse *sr = sd->responses->buf[c];
-            char *n = NULL;
-            const char *t = "";
-            char *size_str = NULL;
-
-            n = translate_remote_to_local(sr->filename);
-            if (sr->filetype == DC_TYPE_DIR) {/* XXX: put into some function */
-                t = "/";
-            } else {
-                size_str = xasprintf(" (%s)", human_readable(sr->filesize, sizebuf, human_suppress_point_zero|human_autoscale|human_base_1024|human_SI|human_B|human_space_before_unit, 1, 1));
-            }
-
-            screen_putf("%d. %s %s%s%s\n", c+1, quotearg(sr->userinfo->nick), n, t, (size_str)?size_str:"");
-
-            if (size_str) {
-                free(size_str);
-            }
-
-            free(n);
-        }
+      spec = search_selection_to_string(&sd->selection);
+      status = sd->issue_time + SEARCH_TIME_THRESHOLD <= now
+        ? _("Closed") : _("Open");
+      screen_putf(_("%d. %s (%s) Results: %d\n"), d+1, quotearg(spec),
+          status, sd->responses->cur);
     }
+    return;
+  }
+
+  for (d = 1; d < argc; d++) 
+  {
+    DCSearchRequest *sd;
+
+    uint32_t c;
+
+    if (!parse_uint32(argv[d], &c) || c == 0 || c-1 >= our_searches->cur) 
+    {
+      screen_putf(_("%s: Invalid search index.\n"), quotearg(argv[d]));
+      continue;
+    }
+    
+    /* These are our searches. */
+    sd = our_searches->buf[c-1];
+    
+    screen_putf(_("Search %d:\n"), c);
+    for (c = 0; c < sd->responses->cur; c++) 
+    {
+      DCSearchResponse *sr = sd->responses->buf[c];
+      char *n = NULL;
+      const char *t = "";
+      char *size_str = NULL;
+
+      n = translate_remote_to_local(sr->filename);
+      if (sr->filetype == DC_TYPE_DIR) {/* XXX: put into some function */
+        t = "/";
+      } 
+      else 
+      {
+        size_str = xasprintf(" (%s)", human_readable(sr->filesize, sizebuf
+              , human_suppress_point_zero|human_autoscale|human_base_1024|human_SI|human_B|human_space_before_unit
+              , 1, 1));
+      }
+
+      screen_putf("%d. %s %s%s%s\n", c+1, quotearg(sr->userinfo->nick), n, t, (size_str)?size_str:"");
+
+      if (size_str) 
+      {
+        free(size_str);
+      }
+
+      free(n);
+    }
+    
+    DCSearchRequest *sortedSd = (DCSearchRequest*) calloc(1, sizeof(DCSearchRequest));
+    sortedSearchResults(sd, sortedSd);
+  }
+  free(fullArgs);
 }
 
 static void

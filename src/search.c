@@ -774,7 +774,6 @@ add_search_request(char *args)
     }
     else 
     {
-      screen_putf("Searching for type : %s \n", strstr(args, "$$"));
       return add_search_request_type(args, DC_SEARCH_ANY);
     }
   }

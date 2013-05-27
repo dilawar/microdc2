@@ -725,7 +725,24 @@ add_search_request_type(char *args, DCSearchDataType datatype)
 bool
 add_search_request(char *args)
 {
-	return add_search_request_type(args, DC_SEARCH_ANY);
+  /* Find if -t is specified. If yes then search that particular type else
+   * search any. 
+   */
+  if(NULL != strstr(args, "$$"))
+  {
+    if(NULL != strstr(args, "video"))
+    {
+      char searchString[200];
+      searchStringFromArg(searchString, args);
+      screen_putf("Searching for VIDEOS \n");
+      return add_search_request_type(searchString, DC_SEARCH_VIDEO);
+    }
+    else 
+    {
+      screen_putf("Searching for type : %s \n", strstr(args, "$$"));
+      return add_search_request_type(args, DC_SEARCH_ANY);
+    }
+  }
 }
 
 void

@@ -1,11 +1,11 @@
-set sharedir /home/dilawar/Public/share/
-set downloaddir /home/dilawar/Public/down/
+set sharedir /home/dilawar/Public/DC/share/
+set downloaddir /home/dilawar/Public/DC/down/
 set filesystem_charset utf-8
 set hub_charset cp1251
 set active on
 set listenaddr 10.14.42.7
 set display searchresult
-set listingdir /home/dilawar/Public/temp/
+set listingdir /home/dilawar/Downloads/Temp/
 set auto_reconnect on
 set nick BlahKing
 set description "Microdc2 rocks!"

@@ -32,7 +32,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 MKINSTALLDIRS = $(top_builddir)/build-aux/mkinstalldirs
 mkinstalldirs = $(SHELL) $(MKINSTALLDIRS)
 
-GMSGFMT = /usr/bin/gmsgfmt
+GMSGFMT = /usr/bin/msgfmt
 MSGFMT = /usr/bin/msgfmt
 XGETTEXT = /usr/bin/xgettext
 MSGMERGE = msgmerge

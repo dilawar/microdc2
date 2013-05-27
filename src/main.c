@@ -46,6 +46,7 @@
 #include "human.h"		/* Gnulib */
 #include "getline.h"		/* Gnulib/GNU Libc */
 #include "gettext.h"		/* Gnulib/GNU gettext */
+#include "curses.h"
 #define _(s) gettext(s)
 #define N_(s) gettext_noop(s)
 #include "common/error.h"

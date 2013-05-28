@@ -31,6 +31,7 @@
 #include <sys/types.h>		/* ? */
 #include <netinet/in.h>		/* ? */
 #include <arpa/inet.h>		/* ? */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
 #include "dirname.h"		/* Gnulib */
 #include "full-write.h"		/* Gnulib */
@@ -392,7 +393,7 @@ download_next_file(DCUserConnLocal *ucl)
     if (flag == DC_TF_LIST) {
         free(share_file);
 #if defined(HAVE_LIBXML2)
-        if (ucl->supports != NULL && ptrv_find(ucl->supports, "XmlBZList", (comparison_fn_t)strcasecmp) >= 0) {
+        if (ucl->supports != NULL && ptrv_find(ucl->supports, (void*) "XmlBZList", (comparison_fn_t)strcasecmp) >= 0) {
             share_file = strdup("/files.xml.bz2");
         } else {
             share_file = strdup("/MyList.DcLst");
@@ -466,7 +467,7 @@ open_download_file(DCUserConnLocal *ucl, uint64_t file_size)
     int res;
     char *conv_local_file, *conv_share_file;
 
-    if (ucl->file_size == UINT64_MAX) {
+    if (ucl->file_size == LLONG_MAX) {
         /* A file size of UINT64_MAX means that we did not know the size
          * of the file in advance which is only true for file list files.
          */
@@ -885,7 +886,7 @@ user_handle_command(DCUserConnLocal *ucl, char *buf, uint32_t len)
 
         if (!check_state(ucl, buf, DC_USER_LOCK))
             return;
-        key = memmem(buf+6, len-6, " Pk=", 4);
+        key = (char*) memmem(buf+6, len-6, " Pk=", 4);
         if (key == NULL) {
             warn(_("Invalid $Lock message: Missing Pk value\n"));
             key = buf+len;
@@ -1174,7 +1175,7 @@ user_handle_command(DCUserConnLocal *ucl, char *buf, uint32_t len)
         flags = numbytes;
         numbytes = strsep(&flags, " \r\n");
 
-        if ( (!parse_int64(numbytes, &n_numbytes))) {
+        if ( (!parse_int64(numbytes, (int64_t*) &n_numbytes))) {
             warn(_("Received %s message in wrong state.\n"), strtok(buf, " "));
             terminate_process(ucl); /* MSG: protocol error */
             return;
@@ -1413,7 +1414,7 @@ user_main(int get_fd[2], int put_fd[2], struct sockaddr_in *addr, int sock)
 
     filelist_free(our_filelist);
 
-    ucl = xmalloc(sizeof(DCUserConnLocal));
+    ucl = (DCUserConnLocal*) xmalloc(sizeof(DCUserConnLocal));
     cur_ucl = ucl; /* one per process anyway */
     ucl->user_nick = NULL;
     ucl->share_file = NULL;

@@ -122,7 +122,7 @@ struct quoting_options *
 clone_quoting_options (struct quoting_options *o)
 {
     int e = errno;
-    struct quoting_options *p = xmalloc (sizeof *p);
+    struct quoting_options *p = (struct quoting_options*) xmalloc (sizeof *p);
     *p = *(o ? o : &default_quoting_options);
     errno = e;
     return p;
@@ -641,7 +641,7 @@ quotearg_alloc (char const *arg, size_t argsize,
 {
     int e = errno;
     size_t bufsize = quotearg_buffer (0, 0, arg, argsize, o) + 1;
-    char *buf = xmalloc (bufsize);
+    char *buf = (char*) xmalloc (bufsize);
     quotearg_buffer (buf, bufsize, arg, argsize, o);
     errno = e;
     return buf;
@@ -691,10 +691,10 @@ quotearg_n_options (int n, char const *arg, size_t argsize,
 
         if (slotvec == &slotvec0)
         {
-            slotvec = xmalloc (sizeof *slotvec);
+            slotvec = (struct slotvec*) xmalloc (sizeof *slotvec);
             *slotvec = slotvec0;
         }
-        slotvec = xrealloc (slotvec, n1 * sizeof *slotvec);
+        slotvec = (struct slotvec*) xrealloc (slotvec, n1 * sizeof *slotvec);
         memset (slotvec + nslots, 0, (n1 - nslots) * sizeof *slotvec);
         nslots = n1;
     }
@@ -709,7 +709,7 @@ quotearg_n_options (int n, char const *arg, size_t argsize,
             slotvec[n].size = size = qsize + 1;
             if (val != slot0)
                 free (val);
-            slotvec[n].val = val = xmalloc (size);
+            slotvec[n].val = val = (char*) xmalloc (size);
             quotearg_buffer (val, size, arg, argsize, options);
         }
 

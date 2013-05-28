@@ -18,7 +18,6 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 /* Written by Jim Meyering. */
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -89,8 +88,8 @@ bkm_scale_by_power (__strtol_t *x, int base, int power)
 {
     strtol_error err = LONGINT_OK;
     while (power--)
-        err |= bkm_scale (x, base);
-    return err;
+        err |=  bkm_scale (x, base);
+    return  err;
 }
 
 /* FIXME: comment.  */

@@ -27,7 +27,7 @@
 /* Get wchar_t, WCHAR_MIN, WCHAR_MAX.  */
 #include <stddef.h>
 /* Get CHAR_BIT, LONG_MIN, LONG_MAX, ULONG_MAX.  */
-#include <limits.h>
+#include <climits>
 
 /* Get those types that are already defined in other system include files.  */
 #if defined(__FreeBSD__)

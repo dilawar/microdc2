@@ -95,10 +95,10 @@ StrBuf *
 strbuf_new_with_capacity(uint32_t capacity)
 {
     StrBuf *sb;
-    sb = xmalloc(sizeof(StrBuf));
+    sb = (StrBuf*) xmalloc(sizeof(StrBuf));
     sb->len = 0;
     sb->capacity = capacity;
-    sb->buf = xmalloc(sb->capacity * sizeof(char));
+    sb->buf = (char*) xmalloc(sb->capacity * sizeof(char));
     if (sb->capacity > 0)
         sb->buf[0] = '\0';
     return sb;
@@ -188,7 +188,7 @@ strbuf_free_to_substring(StrBuf *sb, int32_t sp, int32_t ep)
     if (sp == 0 && ep == sb->len)
         buf = sb->buf;
     else
-        buf = xrealloc(sb->buf, ep-sp+1);
+        buf = (char*) xrealloc(sb->buf, ep-sp+1);
     free(sb);
     return buf;
 }
@@ -320,7 +320,7 @@ strbuf_ensure_capacity(StrBuf *sb, uint32_t min_capacity)
 {
     if (min_capacity > sb->capacity) {
         sb->capacity = MAX(min_capacity, sb->len*2+2); /* MAX -> max */
-        sb->buf = xrealloc(sb->buf, sb->capacity * sizeof(char));
+        sb->buf = (char*) xrealloc(sb->buf, sb->capacity * sizeof(char));
         if (sb->len == 0)
             sb->buf[0] = '\0';
     }
@@ -336,7 +336,7 @@ strbuf_substring(StrBuf *sb, int32_t sp, int32_t ep)
     if (sp > ep)
         SWAP_INT32(sp, ep);
 
-    str = xmalloc((ep-sp+1) * sizeof(char));
+    str = (char*) xmalloc((ep-sp+1) * sizeof(char));
     memcpy(str, sb->buf+sp, (ep-sp+1) * sizeof(char));
     str[ep-sp] = '\0';
 

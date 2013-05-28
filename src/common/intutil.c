@@ -22,8 +22,12 @@
 #include <stdio.h>	/* C89 */
 #include <inttypes.h>	/* ? */
 #include "intutil.h"
+#include <climits>
 
-#define INT_STR_FUNC(n,t,m) \
+
+#if  0     /* ----- #if 0 : If0Label_1 ----- */
+
+#define INT_STR_FUNC(n, t, m) \
     char * \
     n(t value) \
     { \
@@ -43,6 +47,8 @@ INT_STR_FUNC(int32_str, int32_t, PRIi32);
 INT_STR_FUNC(int64_str, int64_t, PRIi64);
 INT_STR_FUNC(int16_str, int16_t, PRIi16);
 INT_STR_FUNC(int8_str, int8_t, PRIi8);
+
+#endif     /* ----- #if 0 : If0Label_1 ----- */
 
 /* These are probably used very seldom, so they are disabled. */
 #if 0
@@ -82,7 +88,7 @@ parse_int8(const char *instr, int8_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value < INT8_MIN/10 || (value == INT8_MIN/10 && c > -(INT8_MIN%10)))
+            if (value < CHAR_MIN/10 || (value == CHAR_MIN/10 && c > -(CHAR_MIN%10)))
                 return false;
             value = value*10 - c;
         }
@@ -93,7 +99,7 @@ parse_int8(const char *instr, int8_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value > INT8_MAX/10 || (value == INT8_MAX/10 && c > INT8_MAX%10))
+            if (value > CHAR_MAX/10 || (value == CHAR_MAX/10 && c > CHAR_MAX%10))
                 return false;
             value = value*10 + c;
         }
@@ -115,7 +121,7 @@ parse_int16(const char *instr, int16_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value < INT16_MIN/10 || (value == INT16_MIN/10 && c > -(INT16_MIN%10)))
+            if (value < SHRT_MIN/10 || (value == SHRT_MIN/10 && c > -(SHRT_MIN%10)))
                 return false;
             value = value*10 - c;
         }
@@ -126,7 +132,7 @@ parse_int16(const char *instr, int16_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value > INT16_MAX/10 || (value == INT16_MAX/10 && c > INT16_MAX%10))
+            if (value > INT_MAX/10 || (value == INT_MAX/10 && c > INT_MAX%10))
                 return false;
             value = value*10 + c;
         }
@@ -148,7 +154,7 @@ parse_int32(const char *instr, int32_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value < INT32_MIN/10L || (value == INT32_MIN/10L && c > -(INT32_MIN%10L)))
+            if (value < INT_MIN/10L || (value == INT_MIN/10L && c > -(INT_MIN%10L)))
                 return false;
             value = value*10L - c;
         }
@@ -159,7 +165,7 @@ parse_int32(const char *instr, int32_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value > INT32_MAX/10L || (value == INT32_MAX/10L && c > INT32_MAX%10L))
+            if (value > INT_MAX/10L || (value == INT_MAX/10L && c > INT_MAX%10L))
                 return false;
             value = value*10L + c;
         }
@@ -181,7 +187,7 @@ parse_int64(const char *instr, int64_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value < INT64_MIN/10LL || (value == INT64_MIN/10LL && c > -(INT64_MIN%10LL)))
+            if (value < LLONG_MIN/10LL || (value == LLONG_MIN/10LL && c > -(LLONG_MIN%10LL)))
                 return false;
             value = value*10LL - c;
         }
@@ -192,7 +198,7 @@ parse_int64(const char *instr, int64_t *outint)
             int8_t c = *instr - '0';
             if (c < 0 || c > 9)
                 return false;
-            if (value > INT64_MAX/10LL || (value == INT64_MAX/10LL && c > INT64_MAX%10LL))
+            if (value > LLONG_MAX/10LL || (value == LLONG_MAX/10LL && c > LLONG_MAX%10LL))
                 return false;
             value = value*10LL + c;
         }
@@ -211,7 +217,7 @@ parse_uint8(const char *instr, uint8_t *outint)
         int8_t c = *instr - '0';
         if (c < 0 || c > 9)
             return false;
-        if (value > UINT8_MAX/10 || (value == UINT8_MAX/10 && c > UINT8_MAX%10))
+        if (value > UCHAR_MAX/10 || (value == UCHAR_MAX/10 && c > UCHAR_MAX%10))
             return false;
         value = value*10 + c;
     }
@@ -229,7 +235,7 @@ parse_uint16(const char *instr, uint16_t *outint)
         int8_t c = *instr - '0';
         if (c < 0 || c > 9)
             return false;
-        if (value > UINT16_MAX/10 || (value == UINT16_MAX/10 && c > UINT16_MAX%10))
+        if (value > UINT_MAX/10 || (value == UINT_MAX/10 && c > UINT_MAX%10))
             return false;
         value = value*10 + c;
     }
@@ -247,7 +253,7 @@ parse_uint32(const char *instr, uint32_t *outint)
         int8_t c = *instr - '0';
         if (c < 0 || c > 9)
             return false;
-        if (value > UINT32_MAX/10L || (value == UINT32_MAX/10L && c > UINT32_MAX%10))
+        if (value > UINT_MAX/10L || (value == UINT_MAX/10L && c > UINT_MAX%10))
             return false;
         value = value*10L + c;
     }
@@ -265,7 +271,7 @@ parse_uint64(const char *instr, uint64_t *outint)
         int8_t c = *instr - '0';
         if (c < 0 || c > 9)
             return false;
-        if (value > UINT64_MAX/10LL || (value == UINT64_MAX/10LL && c > UINT64_MAX%10LL))
+        if (value > ULLONG_MAX/10LL || (value == ULLONG_MAX/10LL && c > ULLONG_MAX%10LL))
             return false;
         value = value*10LL + c;
     }

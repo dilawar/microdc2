@@ -26,6 +26,7 @@
 #include <netdb.h>		/* POSIX.1: gethostbyname, h_errno, ?hstrerror? */
 #include <arpa/inet.h>		/* BSD 4.3: inet_aton */
 #include <dirent.h>		/* ? */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* POSIX.1 (CX): PRI* */
 #include "iconvme.h"		/* Gnulib */
 #include "xvasprintf.h"		/* Gnulib */
@@ -51,6 +52,7 @@
 #include "common/bksearch.h"
 #include "common/swap.h"
 #include "common/optparser.h"
+#include "common/substrcmp.h"
 #include "microdc.h"
 
 //#define _TRACE
@@ -146,7 +148,7 @@ static TMap *commands; /* initialized in command_init */
 static void
 add_builtin_command(const char *name, DCBuiltinCommandHandler handler, DCCompletorFunction completor, const char *usage_msg, const char *help_msg)
 {
-    DCBuiltinCommand *builtin = xmalloc(sizeof(DCBuiltinCommand));
+    DCBuiltinCommand *builtin = (DCBuiltinCommand*) xmalloc(sizeof(DCBuiltinCommand));
     builtin->cmd.name = xstrdup(name); /* XXX: this should be avoidable (pass char *name instead) */
     builtin->cmd.type = DC_CMD_BUILTIN;
     builtin->handler = handler;
@@ -159,7 +161,7 @@ add_builtin_command(const char *name, DCBuiltinCommandHandler handler, DCComplet
 static void
 add_alias_command(const char *name, const char *alias_spec)
 {
-    DCAliasCommand *alias = xmalloc(sizeof(DCAliasCommand));
+    DCAliasCommand *alias = (DCAliasCommand*) xmalloc(sizeof(DCAliasCommand));
     alias->cmd.name = xstrdup(name);
     alias->cmd.type = DC_CMD_ALIAS;
     alias->alias_spec = xstrdup(alias_spec);
@@ -180,7 +182,7 @@ free_command(DCCommand *cmd)
 void
 command_finish(void)
 {
-    tmap_foreach_value(commands, free_command);
+    tmap_foreach_value(commands, (void (*) ())free_command);
     tmap_free(commands);
 }
 
@@ -369,7 +371,7 @@ default_completion_selector(DCCompletionInfo *ci)
         char *name;
 
         name = get_word_dequoted(ci2.line, 0);
-        cmd = tmap_get(commands, name);
+        cmd = (DCCommand*) tmap_get(commands, name);
         free(name);
         if (cmd != NULL) {
             if (cmd->type == DC_CMD_BUILTIN) {
@@ -468,7 +470,7 @@ alias_completion_generator(DCCompletionInfo *ci)
 
     tmap_iterator_partial(commands, &it, ci->word, (comparison_fn_t) strleftcmp);
     while (it.has_next(&it)) {
-        DCCommand *cmd = it.next(&it);
+        DCCommand *cmd = (DCCommand*) it.next(&it);
         if (cmd->type == DC_CMD_ALIAS)
             ptrv_append(ci->results, new_completion_entry(cmd->name, NULL));
     }
@@ -481,7 +483,7 @@ command_completion_generator(DCCompletionInfo *ci)
 
     tmap_iterator_partial(commands, &it, ci->word, (comparison_fn_t) strleftcmp);
     while (it.has_next(&it)) {
-        DCCommand *cmd = it.next(&it);
+        DCCommand *cmd = (DCCommand*) it.next(&it);
         ptrv_append(ci->results, new_completion_entry(cmd->name, NULL));
     }
 }
@@ -503,7 +505,7 @@ command_execute(const char *line)
         }
 
         name = get_word_dequoted_termchar(line, 0, ';'); /* won't return NULL */
-        cmd = tmap_get(commands, name);
+        cmd = (DCCommand*) tmap_get(commands, name);
         if (cmd != NULL && cmd->type == DC_CMD_ALIAS) {
             DCAliasCommand *alias = (DCAliasCommand *) cmd;
             char *newline;
@@ -620,9 +622,9 @@ executable_completion_generator(DCCompletionInfo *ci)
 
     /* local_fs_completion_generator will sort the results. */
     if (*dir_part != '\0' || path_has_cwd) {
-        local_fs_completion_generator(ci,DC_CPL_DIR|DC_CPL_EXE|DC_CPL_DOT);
+        local_fs_completion_generator(ci, DC_CPL_DIR|DC_CPL_EXE|DC_CPL_DOT);
     } else if (ci->results->cur == 0) {
-        local_fs_completion_generator(ci,DC_CPL_DIR|DC_CPL_DOT);
+        local_fs_completion_generator(ci, DC_CPL_DIR|DC_CPL_DOT);
     }
 
     free(dir_part);
@@ -653,7 +655,7 @@ cmd_help(int argc, char **argv)
 
         buf = strbuf_new();
         for (tmap_iterator(commands, &it); it.has_next(&it); ) {
-            DCCommand *cmd = it.next(&it);
+            DCCommand *cmd = (DCCommand*) it.next(&it);
             if (cmd->type == DC_CMD_BUILTIN) {
                 DCBuiltinCommand *builtin = (DCBuiltinCommand *) cmd;
                 if (strlen(builtin->usage_msg) < width/2) {
@@ -683,7 +685,7 @@ cmd_help(int argc, char **argv)
 
     for (c = 1; c < argc; c++) {
         DCCommand *cmd;
-        cmd = tmap_get(commands, argv[c]);
+        cmd = (DCCommand*) tmap_get(commands, argv[c]);
         if (cmd == NULL) {
             warn("%s: Unknown command.\n", quotearg(argv[c]));
         } else {
@@ -796,7 +798,7 @@ cmd_status(int argc, char **argv)
     if (our_filelist != NULL) {
         hmap_iterator(our_filelist->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *node = it.next(&it);
+            DCFileList *node = (DCFileList*) it.next(&it);
             char* screen_path = fs_to_main_string(node->dir.real_path);
             screen_putf(_("  %s - %" PRIu64" %s (%s)\n"),
                         screen_path,
@@ -905,7 +907,7 @@ cmd_msg(int argc, char **argv)
         screen_putf(_("Not connected.\n"));
         return;
     }
-    ui = hmap_get(hub_users, argv[1]);
+    ui = (DCUserInfo*) hmap_get(hub_users, argv[1]);
     if (ui == NULL) {
         screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[1]));
         return;
@@ -1009,7 +1011,7 @@ cmd_grantslot(int argc, char **argv)
 
         hmap_iterator(hub_users, &it);
         while (it.has_next(&it)) {
-            DCUserInfo *ui = it.next(&it);
+            DCUserInfo *ui = (DCUserInfo*) it.next(&it);
             if (ui->slot_granted)
                 screen_putf("%s\n", ui->nick);
         }
@@ -1018,7 +1020,7 @@ cmd_grantslot(int argc, char **argv)
     for (c = 1; c < argc; c++) {
         DCUserInfo *ui;
 
-        ui = hmap_get(hub_users, argv[c]);
+        ui = (DCUserInfo*) hmap_get(hub_users, argv[c]);
         if (ui == NULL) {
             screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[c]));
             return;
@@ -1063,7 +1065,7 @@ queued_file_cmp(const char *filename, DCQueuedFile *qf)
 void
 browse_list_parsed(DCFileList *node, void *data)
 {
-    char *nick = data;
+    char *nick = (char*) data;
 
     /* These checks are to protect from the case when
      * the user is already browsing the user the file
@@ -1115,7 +1117,7 @@ cmd_browse(int argc, char **argv)
         return;
     }
 
-    ui = hmap_get(hub_users, argv[1]);
+    ui = (DCUserInfo*) hmap_get(hub_users, argv[1]);
     if (ui == NULL) {
         screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[1]));
         return;
@@ -1147,10 +1149,10 @@ cmd_browse(int argc, char **argv)
         free(filename);
         free(xml_filename);
         free(bzxml_filename);
-        if (ptrv_find(ui->download_queue, "/MyList.DcLst", (comparison_fn_t) queued_file_cmp) < 0 &&
-                ptrv_find(ui->download_queue, "/files.xml", (comparison_fn_t) queued_file_cmp) < 0 &&
-                ptrv_find(ui->download_queue, "/files.xml.bz2", (comparison_fn_t) queued_file_cmp) < 0) {
-            DCQueuedFile *queued = xmalloc(sizeof(DCQueuedFile));
+        if (ptrv_find(ui->download_queue, (void*) "/MyList.DcLst", (comparison_fn_t) queued_file_cmp) < 0 &&
+                ptrv_find(ui->download_queue, (void*) "/files.xml", (comparison_fn_t) queued_file_cmp) < 0 &&
+                ptrv_find(ui->download_queue, (void*) "/files.xml.bz2", (comparison_fn_t) queued_file_cmp) < 0) {
+            DCQueuedFile *queued = (DCQueuedFile*) xmalloc(sizeof(DCQueuedFile));
 
             TRACE(("%s:%d: enqueue a new file list to download\n", __FUNCTION__, __LINE__));
 
@@ -1158,7 +1160,7 @@ cmd_browse(int argc, char **argv)
             queued->base_path = xstrdup("/");
             queued->flag = DC_TF_LIST;
             queued->status = DC_QS_QUEUED;
-            queued->length = UINT64_MAX; /* UINT64_MAX means that the size is unknown */
+            queued->length = LLONG_MAX; /* UINT64_MAX means that the size is unknown */
             ptrv_prepend(ui->download_queue, queued);
         } else {
             TRACE(("%s:%d: there is already filelist in download queue\n", __FUNCTION__, __LINE__));
@@ -1242,7 +1244,7 @@ cmd_cd(int argc, char **argv)
         }
         remote_wildcard_expand(argv[1], &quoted, basedir, basenode, results);
         if (results->cur >= 1) {
-            char *name = results->buf[0];
+            char *name = (char*) results->buf[0];
             char *fullname;
             DCFileList *node;
 
@@ -1302,7 +1304,7 @@ cmd_find(int argc, char **argv)
         }
         remote_wildcard_expand(argv[c], &quoted, basedir, basenode, results);
         for (d = 0; d < results->cur; d++) {
-            char *name = results->buf[d];
+            char *name = (char*) results->buf[d];
             char *fullname;
             DCFileList *node;
 
@@ -1331,7 +1333,7 @@ cmd_ls(int argc, char **argv)
     OptParser *p;
     int mode = 0;
 
-    p = optparser_new(long_opts, -1, 0);
+    p = optparser_new(long_opts, -1, (OptParserConfig) 0);
     optparser_parse(p, argc, argv);
     while (optparser_has_next(p)) {
         switch (optparser_next(p)) {
@@ -1379,7 +1381,7 @@ cmd_ls(int argc, char **argv)
         }
         remote_wildcard_expand(arg, &quoted, basedir, basenode, results);
         for (d = 0; d < results->cur; d++) {
-            char *name = results->buf[d];
+            char *name = (char*) results->buf[d];
             char *fullname;
             DCFileList *node;
 
@@ -1410,7 +1412,7 @@ cmd_retry(int argc, char **argv)
     for (c = 1; c < argc; c++) {
         DCUserInfo *ui;
 
-        ui = hmap_get(hub_users, argv[c]);
+        ui = (DCUserInfo*) hmap_get(hub_users, argv[c]);
         if (ui == NULL) {
             screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[c]));
             continue;
@@ -1442,7 +1444,7 @@ cmd_queue(int argc, char **argv)
 
         hmap_iterator(hub_users, &it);
         while (it.has_next(&it)) {
-            DCUserInfo *ui = it.next(&it);
+            DCUserInfo *ui = (DCUserInfo*) it.next(&it);
             if (ui->download_queue->cur > 0)
                 screen_putf("%3d %s\n", ui->download_queue->cur, ui->nick);
         }
@@ -1453,14 +1455,14 @@ cmd_queue(int argc, char **argv)
         uint32_t c;
         DCUserInfo *ui;
 
-        ui = hmap_get(hub_users, argv[d]);
+        ui = (DCUserInfo*) hmap_get(hub_users, argv[d]);
         if (ui == NULL) {
             screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[d]));
             continue;
         }
         screen_putf("%s:\n", quotearg(ui->nick));
         for (c = 0; c < ui->download_queue->cur; c++) {
-            DCQueuedFile *queued = ui->download_queue->buf[c];
+            DCQueuedFile *queued = (DCQueuedFile*) ui->download_queue->buf[c];
             char *status;
 
             switch (queued->status) {
@@ -1492,12 +1494,12 @@ cmd_queue(int argc, char **argv)
 static void
 removed_queued_by_range(uint32_t sp, uint32_t ep, void *userdata)
 {
-    DCUserInfo *user = userdata;
+    DCUserInfo *user = (DCUserInfo*) userdata;
     uint32_t c;
 
     for (c = sp-1; c < ep; c++) {
         if (user->download_queue->buf[c] != NULL) {
-            free_queued_file(user->download_queue->buf[c]);
+            free_queued_file((DCQueuedFile*)user->download_queue->buf[c]);
             user->download_queue->buf[c] = NULL;
         }
     }
@@ -1553,7 +1555,7 @@ cmd_unqueue(int argc, char **argv)
         screen_putf(_("Not connected.\n"));
         return;
     }
-    user = hmap_get(hub_users, argv[1]);
+    user = (DCUserInfo*) hmap_get(hub_users, argv[1]);
     if (user == NULL) {
         screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[1]));
         return;
@@ -1634,7 +1636,7 @@ cmd_who(int argc, char **argv)
         for (c = 1; c < argc; c++) {
             DCUserInfo *ui;
 
-            ui = hmap_get(hub_users, argv[c]);
+            ui = (DCUserInfo*) hmap_get(hub_users, argv[c]);
             if (ui == NULL) {
                 screen_putf(_("%s: No such user on this hub\n"), quotearg(argv[c]));
             } else {
@@ -1656,15 +1658,15 @@ cmd_who(int argc, char **argv)
 
     maxlen = 0;
     for (hmap_iterator(hub_users, &it); it.has_next(&it); ) {
-        DCUserInfo *ui = it.next(&it);
+        DCUserInfo *ui = (DCUserInfo*) it.next(&it);
         maxlen = max(maxlen, strlen(quotearg(ui->nick)));
     }
 
     count = hmap_size(hub_users);
-    items = xmalloc(count * sizeof(DCUserInfo *));
+    items = (DCUserInfo**) xmalloc(count * sizeof(DCUserInfo *));
     hmap_iterator(hub_users, &it);
     for (c = 0; c < count; c++)
-        items[c] = it.next(&it);
+        items[c] = (DCUserInfo*) it.next(&it);
     qsort(items, count, sizeof(DCUserInfo *), user_info_compare);
 
     screen_get_size(NULL, &cols);
@@ -1704,7 +1706,7 @@ cmd_transfers(int argc, char **argv)
 
     hmap_iterator(user_conns, &it);
     while (it.has_next(&it)) {
-        DCUserConn *uc = it.next(&it);
+        DCUserConn *uc = (DCUserConn*) it.next(&it);
         maxlen = max(maxlen, strlen(uc->name));
     }
     format = xasprintf("%%-%ds  %%s\n", maxlen);
@@ -1715,7 +1717,7 @@ cmd_transfers(int argc, char **argv)
 
     hmap_iterator(user_conns, &it);
     while (it.has_next(&it)) {
-        DCUserConn *uc = it.next(&it);
+        DCUserConn *uc = (DCUserConn*) it.next(&it);
         char *status;
 
         status = user_conn_status_to_string(uc, now);
@@ -1740,7 +1742,7 @@ cmd_cancel(int argc, char **argv)
     for (c = 1; c < argc; c++) {
         DCUserConn *uc;
 
-        uc = hmap_get(user_conns, argv[c]);
+        uc = (DCUserConn*) hmap_get(user_conns, argv[c]);
         if (uc == NULL) {
             screen_putf(_("%s: No such user connection.\n"), quotearg(argv[c]));
         } else {
@@ -1753,20 +1755,30 @@ cmd_cancel(int argc, char **argv)
 static void
 cmd_search(int argc, char **argv)
 {
-    char *tmp;
+  char *tmp;
 
-    if (argc == 1) {
-        screen_putf(_("Usage: %s STRING...\n"), argv[0]);
-        return;
-    }
-    if (hub_state < DC_HUB_LOGGED_IN) {
-        screen_putf(_("Not connected.\n"));
-        return;
-    }
+  if (argc == 1) {
+    screen_putf(_("Usage: %s STRING...\n"), argv[0]);
+    return;
+  }
+  if (hub_state < DC_HUB_LOGGED_IN) {
+    screen_putf(_("Not connected.\n"));
+    return;
+  }
 
-    tmp = join_strings(argv+1, argc-1, ' ');
-    add_search_request(tmp); /* Ignore errors */
-    free(tmp);
+  tmp = join_strings(argv+1, argc-1, ' ');
+
+  /* This will only make searching users with free-slots */
+  if(NULL != strstr(tmp, ">0"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, tmp, "$0");
+    tmp = searchString;
+    searchUsersWithFreeSlot = true;         
+  }
+
+  add_search_request(tmp); /* Ignore errors */
+  free(tmp);
 }
 
 static void
@@ -1808,7 +1820,7 @@ void sortedSearchResults(const DCSearchRequest* sd)
   uint32_t c, arraySize = 0;
   for (c = 0; c < sd->responses->cur; c++) 
   {
-    DCSearchResponse *sr = sd->responses->buf[c];
+    DCSearchResponse *sr = (DCSearchResponse*) sd->responses->buf[c];
     arrRes[c] = sr;
     arraySizeIndex[c].index = c;
     arraySizeIndex[c].size = sr->filesize;
@@ -1855,8 +1867,9 @@ cmd_results(int argc, char **argv)
       return;
     }
 
-    for (d = 0; d < our_searches->cur; d++) {
-      DCSearchRequest *sd = our_searches->buf[d];
+    for (d = 0; d < our_searches->cur; d++) 
+    {
+      DCSearchRequest *sd = (DCSearchRequest*) our_searches->buf[d];
       char *status;
       char *spec;
 
@@ -1882,20 +1895,21 @@ cmd_results(int argc, char **argv)
     }
     
     /* These are our searches. */
-    sd = our_searches->buf[c-1];
+    sd = (DCSearchRequest*)  our_searches->buf[c-1];
     sortedSearchResults(sd);
     
     screen_putf(_("Search %d:\n"), c);
     for (c = 0; c < sd->responses->cur; c++) 
     {
-      DCSearchResponse *sr = sd->responses->buf[c];
+      DCSearchResponse *sr = (DCSearchResponse*)sd->responses->buf[c];
       char *n = NULL;
       const char *t = "";
       char *size_str = NULL;
       if(sr && sr->filename)
       {
         n = translate_remote_to_local(sr->filename);
-        if (sr->filetype == DC_TYPE_DIR) {/* XXX: put into some function */
+        if (sr->filetype == DC_TYPE_DIR) 
+        {/* XXX: put into some function */
           t = "/";
         } 
         else 
@@ -1915,7 +1929,6 @@ cmd_results(int argc, char **argv)
 
       free(n);
     }
-
   }
   free(fullArgs);
 }
@@ -1938,7 +1951,7 @@ cmd_unsearch(int argc, char **argv)
             return;
         }
 
-        sd = our_searches->buf[index-1];
+        sd = (DCSearchRequest*)our_searches->buf[index-1];
         ptrv_remove_range(our_searches, index-1, index);
         free_search_request(sd);
     }
@@ -1953,7 +1966,7 @@ cmd_alias(int argc, char **argv)
         TMapIterator it;
 
         for (tmap_iterator(commands, &it); it.has_next(&it); ) {
-            DCCommand *cmd = it.next(&it);
+            DCCommand *cmd = (DCCommand*) it.next(&it);
             if (cmd->type == DC_CMD_ALIAS) {
                 DCAliasCommand *alias = (DCAliasCommand *) cmd;
                 screen_putf("alias %s \"%s\"\n" /*no translation */, cmd->name, quotearg(alias->alias_spec));
@@ -1969,7 +1982,7 @@ cmd_alias(int argc, char **argv)
 
         value = strchr(name, '=');
         if (value == NULL) {
-            cmd = tmap_get(commands, name);
+            cmd = (DCCommand*) tmap_get(commands, name);
             if (cmd != NULL && cmd->type == DC_CMD_ALIAS) {
                 DCAliasCommand *alias = (DCAliasCommand *) cmd;
                 screen_putf("alias %s=\"%s\"\n" /*no translation */, name, quotearg(alias->alias_spec));
@@ -1983,9 +1996,9 @@ cmd_alias(int argc, char **argv)
                 warn(_("%s: Invalid alias name\n"), quotearg(name));
                 continue;
             }
-            cmd = tmap_get(commands, name);
+            cmd = (DCCommand*) tmap_get(commands, name);
             if (cmd == NULL) {
-                DCAliasCommand *alias = xmalloc(sizeof(DCAliasCommand));
+                DCAliasCommand *alias = (DCAliasCommand*) xmalloc(sizeof(DCAliasCommand));
                 alias->cmd.name = xstrdup(name);
                 alias->cmd.type = DC_CMD_ALIAS;
                 alias->alias_spec = xstrdup(value);
@@ -2012,7 +2025,7 @@ cmd_unalias(int argc, char **argv)
     }
 
     for (c = 0; c < argc; c++) {
-        DCCommand *cmd = tmap_get(commands, argv[c]);
+        DCCommand *cmd = (DCCommand*) tmap_get(commands, argv[c]);
         if (cmd == NULL || cmd->type != DC_CMD_ALIAS) {
             warn(_("%s: No such alias.\n"), quotearg(argv[c]));
         } else {
@@ -2056,7 +2069,7 @@ append_download_file(DCUserInfo *ui, DCFileList *node, DCFileList *basenode, uin
                 return;
             }
 
-            queued = xmalloc(sizeof(DCQueuedFile));
+            queued = (DCQueuedFile*) xmalloc(sizeof(DCQueuedFile));
             queued->filename = path;
             queued->base_path = filelist_get_path_with_trailing_slash(basenode);
             queued->flag = DC_TF_NORMAL;
@@ -2073,7 +2086,7 @@ append_download_file(DCUserInfo *ui, DCFileList *node, DCFileList *basenode, uin
 
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it))
-            append_download_file(ui, it.next(&it), basenode, file_count, byte_count);
+            append_download_file(ui, (DCFileList*) it.next(&it), basenode, file_count, byte_count);
     }
 }
 
@@ -2120,7 +2133,7 @@ cmd_get(int argc, char **argv)
         }
         remote_wildcard_expand(argv[c], &quoted, basedir, basenode, results);
         for (d = 0; d < results->cur; d++) {
-            char *name = results->buf[d];
+            char *name = (char*) results->buf[d];
             char *fullname;
             DCFileList *node;
 
@@ -2202,7 +2215,7 @@ cmd_getresult(int argc, char **argv)
         return;
     }
 
-    sd = our_searches->buf[result_idx-1];    
+    sd = (DCSearchRequest*) our_searches->buf[result_idx-1];    
     
     uint32_t file_idx;
     
@@ -2211,7 +2224,7 @@ cmd_getresult(int argc, char **argv)
         return;
     }
         
-    DCSearchResponse *sr = sd->responses->buf[file_idx-1];
+    DCSearchResponse *sr = (DCSearchResponse*) sd->responses->buf[file_idx-1];
     
     if (sr->filetype == DC_TYPE_DIR) {
         screen_putf(_("getresult works only with regular files, not with directories.\n"));
@@ -2236,7 +2249,7 @@ cmd_getresult(int argc, char **argv)
 static void
 lookup_address_looked_up(int rc, struct addrinfo *ai, void *data)
 {
-    char *host = data;
+    char *host = (char*) data;
 
     screen_putf("%s:", quotearg(host));
     if (rc == 0) {

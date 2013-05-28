@@ -11,6 +11,7 @@
 
 #include "bzip2/bzlib.h"
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
 #include "iconvme.h"
 #include "common/comparison.h"
@@ -54,7 +55,7 @@ struct __bzip2_xml_context
 char* xml_quote_string(const unsigned char* str)
 {
     int i = 0;
-    int len = strlen(str);
+    int len = strlen((const char*) str);
     StrBuf *r = strbuf_new();
 
     for (i = 0; i < len; i++) {
@@ -90,19 +91,19 @@ int xmlTextWriterStartDocumentNew(xmlTextWriterPtr writer, const char *version, 
 
     sum = 0;
     if (version != 0)
-        count = xmlTextWriterWriteFormatRaw(writer, "<?xml version=\"%s\"", version);
+        count = xmlTextWriterWriteFormatRaw( writer, (const char*) "<?xml version=\"%s\"", version);
     else
-        count = xmlTextWriterWriteRaw(writer, "<?xml version=\"1.0\"");
+        count = (int) xmlTextWriterWriteRaw(writer, (const xmlChar*) "<?xml version=\"1.0\"");
     sum += count;
     if (encoding != 0) {
-        count = xmlTextWriterWriteFormatRaw(writer, " encoding=\"%s\"", encoding);
+        count = (int) xmlTextWriterWriteFormatRaw(writer, (const char*) " encoding=\"%s\"", encoding);
         sum += count;
     }
     if (standalone != 0) {
-        count = xmlTextWriterWriteFormatRaw(writer, " standalone=\"%s\"", standalone);
+        count = (int) xmlTextWriterWriteFormatRaw(writer, (const char*) " standalone=\"%s\"", standalone);
         sum += count;
     }
-    count = xmlTextWriterWriteRaw(writer, "?>\n");
+    count = (int) xmlTextWriterWriteRaw(writer, (const xmlChar*) "?>\n");
     sum += count;
 
     return sum;
@@ -160,20 +161,20 @@ int write_node(xmlTextWriterPtr writer, DCFileList* node)
     if (node != NULL) {
         switch (node->type) {
         case DC_TYPE_REG:
-            written += xmlTextWriterStartElement(writer, "File");
+            written += xmlTextWriterStartElement(writer, (const xmlChar*) "File");
             break;
         case DC_TYPE_DIR:
-            written += xmlTextWriterStartElement(writer, "Directory");
+            written += xmlTextWriterStartElement(writer, (const xmlChar*) "Directory");
             break;
         default:
             return 0;
         }
 
-        char* q_name = xml_quote_string(node->name);
-        char* utf8_name = fs_to_utf8_string(q_name);
+        char* q_name = (char*) xml_quote_string((const xmlChar*) node->name);
+        char* utf8_name =(char*)  fs_to_utf8_string(q_name);
         free(q_name);
 
-        written += xmlTextWriterWriteAttributeFilename(writer, "Name", utf8_name);
+        written += xmlTextWriterWriteAttributeFilename(writer, (const xmlChar*) "Name", (const xmlChar*) utf8_name);
         free(utf8_name);
 
         switch (node->type) {
@@ -181,11 +182,11 @@ int write_node(xmlTextWriterPtr writer, DCFileList* node)
         {
             char value[64];
             sprintf(value, "%" PRIu64, node->size);
-            written += xmlTextWriterWriteAttribute(writer, "Size", value);
+            written += xmlTextWriterWriteAttribute(writer, (const xmlChar*) "Size", (const xmlChar*) value);
             if (node->reg.has_tth) {
                 memset(value, 0, 64);
                 memcpy(value, node->reg.tth, sizeof(node->reg.tth));
-                written += xmlTextWriterWriteAttribute(writer, "TTH", value);
+                written += xmlTextWriterWriteAttribute(writer, (const xmlChar*) "TTH", (const xmlChar*) value);
             }
         }
         break;
@@ -194,7 +195,7 @@ int write_node(xmlTextWriterPtr writer, DCFileList* node)
             HMapIterator it;
             hmap_iterator(node->dir.children, &it);
             while (it.has_next(&it)) {
-                DCFileList *subnode = it.next(&it);
+                DCFileList *subnode = (DCFileList*) it.next(&it);
                 write_node(writer, subnode);
             }
         }
@@ -215,18 +216,19 @@ int write_xml_filelist_document(xmlOutputBufferPtr output, DCFileList* root)
 
     written += xmlTextWriterStartDocumentNew(writer, "1.0", "utf-8", NULL);
 
-    written += xmlTextWriterStartElement(writer, "FileListing");
-    written += xmlTextWriterWriteAttribute(writer, "Version", "1");
-    written += xmlTextWriterWriteAttribute(writer, "CID", "ABBACDDCEFFE23324554GHHG7667XYYX2RR2XYZ");
-    written += xmlTextWriterWriteAttribute(writer, "Generator", my_tag);
-    written += xmlTextWriterWriteAttribute(writer, "Base", "/");
+    written += xmlTextWriterStartElement(writer, (const xmlChar*)"FileListing");
+    written += xmlTextWriterWriteAttribute(writer, (const xmlChar*)"Version", (const xmlChar*)"1");
+    written += xmlTextWriterWriteAttribute(writer, (const xmlChar*)"CID"
+        ,(const xmlChar*) "ABBACDDCEFFE23324554GHHG7667XYYX2RR2XYZ");
+    written += xmlTextWriterWriteAttribute(writer, (const xmlChar*)"Generator", (const xmlChar*)my_tag);
+    written += xmlTextWriterWriteAttribute(writer, (const xmlChar*)"Base", (const xmlChar*)"/");
 
     if (root != NULL) {
         HMapIterator it;
 
         hmap_iterator(root->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *node = it.next(&it);
+            DCFileList *node = (DCFileList*) it.next(&it);
             written += write_node(writer, node);
         }
     }
@@ -282,14 +284,14 @@ xmlDocPtr  generate_xml_filelist(DCFileList* root)
 
     XML_CALL(attr, xmlNewProp(xml_root, BAD_CAST("Version"), BAD_CAST("1")));
     XML_CALL(attr, xmlNewProp(xml_root, BAD_CAST("CID"), BAD_CAST("ABBACDDCEFFE23324554GHHG7667XYYX2RR2XYZ")));
-    XML_CALL(attr, xmlNewProp(xml_root, BAD_CAST("Generator"), my_tag));
+    XML_CALL(attr, xmlNewProp(xml_root, BAD_CAST("Generator"), (const xmlChar*)my_tag));
     XML_CALL(attr, xmlNewProp(xml_root, BAD_CAST("Base"), BAD_CAST("/")));
 
     HMapIterator it;
 
     hmap_iterator(root->dir.children, &it);
     while (it.has_next(&it)) {
-        DCFileList *subnode = it.next(&it);
+        DCFileList *subnode = (DCFileList*) it.next(&it);
         insert_node(xml_root, subnode);
     }
 
@@ -312,7 +314,7 @@ xmlNodePtr insert_node(xmlNodePtr xml_parent, DCFileList* node)
         XML_CALL(xml_node, xmlNewChild(xml_parent, NULL, BAD_CAST("Directory"), BAD_CAST("")));
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *subnode = it.next(&it);
+            DCFileList *subnode = (DCFileList*) it.next(&it);
             insert_node(xml_node, subnode);
         }
         break;
@@ -323,17 +325,17 @@ xmlNodePtr insert_node(xmlNodePtr xml_parent, DCFileList* node)
     if (node != NULL) {
         char* utf8_name = fs_to_utf8_string(node->name);
 
-        XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("Name"), utf8_name));
+        XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("Name"), (const xmlChar*)utf8_name));
         free(utf8_name);
 
         if (node->type == DC_TYPE_REG) {
             char value[64];
             sprintf(value, "%" PRIu64, node->size);
-            XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("Size"), value));
+            XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("Size"), (const xmlChar*)value));
             if (node->reg.has_tth) {
                 memset(value, 0, 64);
                 memcpy(value, node->reg.tth, sizeof(node->reg.tth));
-                XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("TTH"), value));
+                XML_CALL(attr, xmlNewProp(xml_node, BAD_CAST("TTH"), (const xmlChar*)value));
             }
         }
     }
@@ -373,7 +375,7 @@ void start_element_callback(void* ctxt, const xmlChar* name, const xmlChar** att
 
         if (pctxt->unknown_level == 0) {
             char** a = NULL;
-            for (a = (const char**)attrs; *a != NULL; a++) {
+            for (a = (char**)attrs; *a != NULL; a++) {
                 char* aname  = *a++;
                 char* avalue = *a;
                 if (aname != NULL && avalue != NULL) {
@@ -384,18 +386,18 @@ void start_element_callback(void* ctxt, const xmlChar* name, const xmlChar** att
             }
         }
 
-        if (pctxt->unknown_level == 0 && strcasecmp(name, "FileListing") == 0) {
+        if (pctxt->unknown_level == 0 && strcasecmp( (const char*)name,  "FileListing") == 0) {
             if (pctxt->root != NULL)
                 filelist_free(pctxt->root);
             pctxt->root = pctxt->current = new_file_node("", DC_TYPE_DIR, NULL);
-        } else if (pctxt->unknown_level == 0 && strcasecmp(name, "Directory") == 0) {
+        } else if (pctxt->unknown_level == 0 && strcasecmp((const char*) name, "Directory") == 0) {
             if (filename == NULL) {
                 TRACE(("%s:%d: malformed XML document - unknown directory name\n", __FUNCTION__, __LINE__));
             } else {
                 DCFileList* node = new_file_node(filename, DC_TYPE_DIR, pctxt->current);
                 pctxt->current = node;
             }
-        } else if (pctxt->unknown_level == 0 && strcasecmp(name, "File") == 0) {
+        } else if (pctxt->unknown_level == 0 && strcasecmp((const char*) name, "File") == 0) {
             if (filename == NULL) {
                 TRACE(("%s:%d: malformed XML document - unknown file name\n", __FUNCTION__, __LINE__));
             } else {
@@ -413,7 +415,7 @@ void start_element_callback(void* ctxt, const xmlChar* name, const xmlChar** att
 
         if (pctxt->unknown_level == 0 && pctxt->current->type == DC_TYPE_REG) {
             char** a = NULL;
-            for (a = (const char**)attrs; *a != NULL; a++) {
+            for (a = (char**)attrs; *a != NULL; a++) {
                 char* aname  = *a++;
                 char* avalue = *a;
                 if (aname != NULL && avalue != NULL) {

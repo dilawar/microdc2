@@ -69,7 +69,7 @@ calculate_filelist_data_size(DCFileList *node)
     size = sizeof(DCFileType) + strlen(node->name)+1 + 1 + (node->dir.real_path != NULL ? strlen(node->dir.real_path)+1 : 0) + sizeof(size_t);
     hmap_iterator(node->dir.children, &it);
     while (it.has_next(&it)) {
-        DCFileList *child_node = it.next(&it);
+        DCFileList *child_node = (DCFileList*) it.next(&it);
         size += calculate_filelist_data_size(child_node);
     }
 
@@ -109,7 +109,7 @@ copy_filelist_to_data(DCFileList *node, char *data)
         data += sizeof(size_t);
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *child_node = it.next(&it);
+            DCFileList *child_node = (DCFileList*) it.next(&it);
             data = copy_filelist_to_data(child_node, data);
         }
     }
@@ -130,7 +130,7 @@ filelist_to_data(DCFileList *node, void **dataptr, size_t *sizeptr)
     }
 
     size = calculate_filelist_data_size(node);
-    data = xmalloc(size);
+    data = (char*) xmalloc(size);
     *dataptr = data;
     *sizeptr = size;
 
@@ -144,7 +144,7 @@ data_to_filelist(void *dataptr, DCFileList **outnode)
     DCFileList *node;
     DCFileType node_type;
     char *node_name;
-    char *data = dataptr;
+    char *data = (char*) dataptr;
 
     if (dataptr == NULL) {
         *outnode = NULL;
@@ -172,7 +172,7 @@ data_to_filelist(void *dataptr, DCFileList **outnode)
         for (; count > 0; count--) {
             DCFileList *child_node;
 
-            data = data_to_filelist(data, &child_node);
+            data = (char*) data_to_filelist(data, &child_node);
             hmap_put(node->dir.children, child_node->name, child_node);
             child_node->parent = node;
             node->size += child_node->size;
@@ -227,7 +227,7 @@ parse_decoded_dclst(char *decoded, uint32_t decoded_len)
         if (depth < dirs->cur)
             ptrv_remove_range(dirs, depth, dirs->cur);
 
-        oldnode = dirs->buf[dirs->cur-1];
+        oldnode = (DCFileList*) dirs->buf[dirs->cur-1];
         if (decoded[c] == '|') {
             char *sizestr;
             uint64_t size;
@@ -264,7 +264,7 @@ parse_decoded_dclst(char *decoded, uint32_t decoded_len)
             ptrv_append(dirs, node);
     }
 
-    node = dirs->buf[0];
+    node = (DCFileList*) dirs->buf[0];
     ptrv_free(dirs); /* ignore non-empty */
     return node;
 }
@@ -284,7 +284,7 @@ filelist_open(const char *filename)
         screen_putf(_("%s: Cannot get file status - %s\n"), quotearg(filename), errstr);
         return NULL;
     }
-    contents = malloc(st.st_size);
+    contents = (uint8_t*) malloc(st.st_size);
     if (contents == NULL) {
         screen_putf("%s: %s\n", quotearg(filename), errstr);
         return NULL;
@@ -420,7 +420,7 @@ parse_result_fd_readable(void)
         size_t size;
 
         msgq_get(parse_result_mq, MSGQ_BLOB, &data, &size, MSGQ_END);
-        parse = ptrv_remove_first(pending_parses);
+        parse = (DCFileListParse*) ptrv_remove_first(pending_parses);
         if (!parse->cancelled) {
             DCFileList *node;
 
@@ -466,7 +466,7 @@ add_parse_request(DCFileListParseCallback callback, const char *filename, void *
     msgq_put(parse_request_mq, MSGQ_STR, filename, MSGQ_STR, hub_charset ? hub_charset : "", MSGQ_END);
     FD_SET(parse_request_mq->fd, &write_fds);
 
-    parse = xmalloc(sizeof(DCFileListParse));
+    parse = (DCFileListParse*) xmalloc(sizeof(DCFileListParse));
     parse->callback = callback;
     parse->data = userdata;
     parse->cancelled = false;

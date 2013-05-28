@@ -69,7 +69,7 @@ new_branch_node(void)
 {
     BranchNode *node;
 
-    node = xmalloc(sizeof(BranchNode));
+    node = (BranchNode*) xmalloc(sizeof(BranchNode));
     node->left = NULL;
     node->right = NULL;
     node->chr = -1;
@@ -151,7 +151,7 @@ huffman_encode(const uint8_t *data, uint32_t data_size, uint32_t *out_size)
     uint8_t *bitdata;
 
     if (data_size == 0) {
-        char *outdata = xmemdup("HE3\xD\0\0\0\0\0\0\0", 11);
+        char *outdata = (char*) xmemdup("HE3\xD\0\0\0\0\0\0\0", 11);
         *out_size = 11;
         return outdata;
     }
@@ -166,7 +166,7 @@ huffman_encode(const uint8_t *data, uint32_t data_size, uint32_t *out_size)
         if (counts[c] > 0) {
             EncodeNode *node;
 
-            node = xmalloc(sizeof(EncodeNode));
+            node = (EncodeNode*) xmalloc(sizeof(EncodeNode));
             node->count = counts[c];
             node->left = NULL;
             node->right = NULL;
@@ -179,16 +179,16 @@ huffman_encode(const uint8_t *data, uint32_t data_size, uint32_t *out_size)
     while (tree->cur > 1) {
         EncodeNode *node;
 
-        node = xmalloc(sizeof(EncodeNode));
-        node->left = ptrv_remove_first(tree);
-        node->right = ptrv_remove_first(tree);
+        node = (EncodeNode*) xmalloc(sizeof(EncodeNode));
+        node->left = (EncodeNode*) ptrv_remove_first(tree);
+        node->right = (EncodeNode*) ptrv_remove_first(tree);
         node->count = node->left->count + node->right->count;
         node->value = 0;
 
         ptrv_insort(tree, node, (comparison_fn_t) compare_encode_node);
     }
 
-    rootnode = ptrv_remove_first(tree);
+    rootnode = (EncodeNode*) ptrv_remove_first(tree);
     ptrv_free(tree);
 
     memset(bitnodes, 0, sizeof(bitnodes));
@@ -304,7 +304,7 @@ huffman_decode(const uint8_t *data, uint32_t data_size, uint32_t *out_size)
     }
     bit_pos = BYTE_BOUNDARY(bit_pos);
 
-    output = xmalloc(unpack_size+1);
+    output = (uint8_t*) xmalloc(unpack_size+1);
     output_pos = 0;
     parity = 0;
     for (c = 0; c < unpack_size; c++) {

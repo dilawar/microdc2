@@ -54,7 +54,7 @@ dir_name (char const *file)
 {
     size_t length = dir_len (file);
     bool append_dot = (length == FILE_SYSTEM_PREFIX_LEN (file));
-    char *dir = xmalloc (length + append_dot + 1);
+    char *dir = (char*) xmalloc (length + append_dot + 1);
     memcpy (dir, file, length);
     if (append_dot)
         dir[length++] = '.';

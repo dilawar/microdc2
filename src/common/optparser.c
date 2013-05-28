@@ -86,7 +86,7 @@ lookup_long_option(OptParser *p, const char *str)
 
     tmap_iterator_partial(p->options, &it, str, (comparison_fn_t) strleftcmp);
     if (it.has_next(&it)) {
-        OptDetail *option = it.next(&it);
+        OptDetail *option = (OptDetail*) it.next(&it);
 
         while (it.has_next(&it)) {
             if (it.next(&it) != option) {
@@ -109,7 +109,7 @@ optparser_new(OptDetail *opts, int count, OptParserConfig field, ...)
     va_list args;
     int c;
 
-    parser = xmalloc(sizeof(OptParser));
+    parser = (OptParser*) xmalloc(sizeof(OptParser));
     parser->parse_argv0 = false;
     //parser->print_errors = true;
     //parser->reorder_args = true;
@@ -124,7 +124,7 @@ optparser_new(OptDetail *opts, int count, OptParserConfig field, ...)
         const char *s;
         char *e;
 
-        for (s = opts[c].names; (e = strchr(s, '|')) != NULL; s = e+1) {
+        for (s = opts[c].names; (e = (char*) strchr(s, '|')) != NULL; s = e+1) {
             if (e-s == 1 && s[0] >= 32) {
                 parser->short_opts[s[0] - 32] = &opts[c];
             } else {
@@ -148,7 +148,7 @@ optparser_new(OptDetail *opts, int count, OptParserConfig field, ...)
 void
 optparser_free(OptParser *parser)
 {
-    tmap_foreach_key(parser->options, free);
+    tmap_foreach_key(parser->options, (void (*) ())free);
     tmap_free(parser->options);
     free(parser->parse_state.error);
     free(parser);

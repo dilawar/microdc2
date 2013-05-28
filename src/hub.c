@@ -26,6 +26,7 @@
 #include <arpa/inet.h>		/* ? */
 #include <unistd.h>		/* POSIX */
 #include <time.h>
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* POSIX */
 #include "iconvme.h"		/* Gnulib */
 #include "xvasprintf.h"		/* Gnulib */
@@ -44,10 +45,9 @@
 #define DEFAULT_HUB_RECVQ_SIZE 128
 #define DEFAULT_HUB_SENDQ_SIZE 128
 
-typedef enum {
-    HUB_EXT_NOGETINFO	= 1 << 0,
-    HUB_EXT_NOHELLO	= 1 << 1,
-} DCHubExtension;
+#define     HUB_EXT_NOGETINFO	  1 << 0
+#define     HUB_EXT_NOHELLO	    1 << 1
+typedef unsigned  DCHubExtension;
 
 ByteQ *hub_recvq = NULL;
 ByteQ *hub_sendq = NULL;
@@ -58,7 +58,7 @@ DCLookup *hub_lookup = NULL;
 struct sockaddr_in hub_addr;
 static uint32_t hub_recvq_last = 0;
 char *hub_name = NULL;
-static DCHubExtension hub_extensions = 0;
+static DCHubExtension hub_extensions = (DCHubExtension) 0;
 
 bool   hub_connected = false;
 
@@ -128,7 +128,7 @@ say_user_completion_generator(DCCompletionInfo *ci)
     /* XXX: perhaps hub_users should be made a tmap? to speed up things */
     hmap_iterator(hub_users, &it);
     while (it.has_next(&it)) {
-        DCUserInfo *ui = it.next(&it);
+        DCUserInfo *ui = (DCUserInfo*) it.next(&it);
 
         if (strleftcmp(ci->word, ui->nick) == 0) {
             DCCompletionEntry *entry;
@@ -161,7 +161,7 @@ user_completion_generator(DCCompletionInfo *ci)
     /* XXX: what if we are self found in this list? conflict with user_or_myself_completion_generator */
     hmap_iterator(hub_users, &it);
     while (it.has_next(&it)) {
-        DCUserInfo *ui = it.next(&it);
+        DCUserInfo *ui = (DCUserInfo*) it.next(&it);
         if (strleftcmp(ci->word, ui->nick) == 0)
             ptrv_append(ci->results, new_completion_entry(ui->nick, NULL));
     }
@@ -176,7 +176,7 @@ user_with_queue_completion_generator(DCCompletionInfo *ci)
     /* XXX: for completion speed, maintain a separate TMap for users with queue? */
     hmap_iterator(hub_users, &it);
     while (it.has_next(&it)) {
-        DCUserInfo *ui = it.next(&it);
+        DCUserInfo *ui = (DCUserInfo*) it.next(&it);
         if (ui->download_queue->cur > 0 && strleftcmp(ci->word, ui->nick) == 0)
             ptrv_append(ci->results, new_completion_entry(ui->nick, NULL));
     }
@@ -191,7 +191,7 @@ user_info_new(const char *nick)
     DCUserInfo *info;
     char *ucname;
 
-    info = xmalloc(sizeof(DCUserInfo));
+    info = (DCUserInfo*) xmalloc(sizeof(DCUserInfo));
     info->nick = xstrdup(nick);
     info->description = NULL;
     info->speed = NULL;
@@ -208,17 +208,17 @@ user_info_new(const char *nick)
 
     /* XXX Find existing connections to this user... */
     ucname = xasprintf("%s|%s", nick, _("UL"));
-    info->conn[info->conn_count] = hmap_get(user_conns, ucname);
+    info->conn[info->conn_count] = (DCUserConn*) hmap_get(user_conns, ucname);
     if (info->conn[info->conn_count] != NULL)
         info->conn_count++;
     free(ucname);
     ucname = xasprintf("%s|%s", nick, _("DL"));
-    info->conn[info->conn_count] = hmap_get(user_conns, ucname);
+    info->conn[info->conn_count] = (DCUserConn*) hmap_get(user_conns, ucname);
     if (info->conn[info->conn_count] != NULL)
         info->conn_count++;
     free(ucname);
     ucname = xasprintf("%s|", nick);
-    info->conn[info->conn_count] = hmap_get(user_conns, ucname);
+    info->conn[info->conn_count] = (DCUserConn*) hmap_get(user_conns, ucname);
     if (info->conn[info->conn_count] != NULL)
         info->conn_count++;
     free(ucname);
@@ -289,7 +289,7 @@ hub_putf(const char *format, ...)
 static void
 hub_address_looked_up(int rc, struct addrinfo *ai, void *data)
 {
-    char *hostname = data;
+    char *hostname = (char*) data;
 
     hub_lookup = NULL;
     if (rc != 0) {
@@ -372,7 +372,7 @@ hub_disconnect(void)
         hub_socket = -1;
     }
     if (hub_users != NULL) {
-        hmap_foreach_value(hub_users, user_info_free);
+        hmap_foreach_value(hub_users, (void (*) (void*))user_info_free);
         hmap_clear(hub_users);
     }
     if (hub_sendq != NULL)
@@ -381,12 +381,12 @@ hub_disconnect(void)
         byteq_clear(hub_recvq);
     hub_recvq_last = 0;
     if (pending_userinfo != NULL) {
-        hmap_foreach_value(pending_userinfo, user_info_free);
+        hmap_foreach_value(pending_userinfo, (void (*)(void*))user_info_free);
         hmap_clear(pending_userinfo);
     }
     free(hub_name);
     hub_name = NULL;
-    hub_extensions = 0;
+    hub_extensions = (DCHubExtension) 0;
     hub_state = DC_HUB_DISCONNECTED;
     update_hub_activity();
 }
@@ -406,7 +406,7 @@ static void
 parse_hub_extension(const char *ext)
 {
     if (strcmp(ext, "NoGetINFO") == 0) {
-        hub_extensions |= HUB_EXT_NOGETINFO;
+        hub_extensions |=   HUB_EXT_NOGETINFO;
     } else if (strcmp(ext, "NoHello") == 0) {
         hub_extensions |= HUB_EXT_NOHELLO;
     }
@@ -416,7 +416,7 @@ static char *
 prepare_chat_string_for_display(const char *str)
 {
     char *t1, *t2;
-    if (str[0] == '<' && 0 != (t1 = strstr(str, ">\0xA0"))) { // flag for unicode utf8 support
+    if (str[0] == '<' && 0 != (t1 = strstr(( char*) str,  ">\0xA0"))) { // flag for unicode utf8 support
         *(t1+1) = ' ';
     }
     t1 = try_utf8_to_main_string(str);
@@ -444,10 +444,10 @@ hub_handle_command(char *buf, uint32_t len)
     if (len >= 6 && strncmp(buf, "$Lock ", 6) == 0) {
         char *key;
 
-        if (!check_state(buf, DC_HUB_LOCK))
+        if (!check_state(buf, (DCUserState) DC_HUB_LOCK))
             goto hub_handle_command_cleanup;
 
-        key = memmem(buf+6, len-6, " Pk=", 4);
+        key = (char*) memmem(buf+6, len-6, " Pk=", 4);
         if (key == NULL) {
             warn(_("Invalid $Lock message: Missing Pk value\n"));
             key = buf+len;
@@ -505,7 +505,7 @@ hub_handle_command(char *buf, uint32_t len)
         hub_putf("$NetInfo %d$1$%c|", my_ul_slots, is_active ? 'A' : 'P');
     }
     else if (strcmp(buf, "$ValidateDenide") == 0) {
-        if (!check_state(buf, DC_HUB_HELLO))
+        if (!check_state(buf, (DCUserState) DC_HUB_HELLO))
             goto hub_handle_command_cleanup;
         /* DC++ disconnects immediately if this is received.
          * But shouldn't we give the client a chance to change the nick?
@@ -580,7 +580,7 @@ hub_handle_command(char *buf, uint32_t len)
             free(conv_buf);
             goto hub_handle_command_cleanup;
         }
-        ui = hmap_get(hub_users, token);
+        ui = (DCUserInfo*) hmap_get(hub_users, token);
         if (ui == NULL) {
             /*
              * if the full buf has not been converted from hub to local charset,
@@ -774,7 +774,7 @@ hub_handle_command(char *buf, uint32_t len)
             goto hub_handle_command_cleanup;
         }
         local_nick = hub_to_main_string(nick);
-        ui = hmap_get(hub_users, local_nick);
+        ui = (DCUserInfo*) hmap_get(hub_users, local_nick);
         if (ui == NULL) {
             warn(_("Invalid $RevConnectToMe message: Unknown user %s, ignoring\n"), quotearg(local_nick));
             free(local_nick);
@@ -836,7 +836,7 @@ hub_handle_command(char *buf, uint32_t len)
 
             conv_nick = hub_to_main_string(nick);
 
-            ui = hmap_get(hub_users, conv_nick);
+            ui = (DCUserInfo*) hmap_get(hub_users, conv_nick);
             if (ui == NULL) {
                 ui = user_info_new(conv_nick);
                 hmap_put(hub_users, ui->nick, ui);
@@ -861,7 +861,7 @@ hub_handle_command(char *buf, uint32_t len)
 
         // I don't want these messages.
         //flag_putf(DC_DF_JOIN_PART, "User %s quits.\n", quotearg(conv_nick));
-        ui = hmap_remove(hub_users, conv_nick);
+        ui = (DCUserInfo*) hmap_remove(hub_users, conv_nick);
         if (ui == NULL) {
             /* Some hubs print quit messages for users that never joined,
              * so print this as debug only.
@@ -900,7 +900,7 @@ hub_handle_command(char *buf, uint32_t len)
         if (strncmp(source, "Hub:", 4) == 0) {
             DCUserInfo *ui;
             char *conv_nick = hub_to_main_string(source+4);
-            ui = hmap_get(hub_users, conv_nick);
+            ui = (DCUserInfo*) hmap_get(hub_users, conv_nick);
 
             if (ui == NULL) {
                 warn(_("Invalid $Search message: Unknown user %s.\n"), quotearg(conv_nick));
@@ -1126,7 +1126,7 @@ void hub_reload_users()
 {
     if (hub_putf("$GetNickList|")) {
         if (hub_users != NULL) {
-            hmap_foreach_value(hub_users, user_info_free);
+            hmap_foreach_value(hub_users, (void (*) (void*)) user_info_free);
             hmap_clear(hub_users);
         }
     }

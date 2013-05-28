@@ -43,7 +43,7 @@ static inline void
 byteq_enlarge(ByteQ *bq)
 {
     bq->max *= 2;
-    bq->buf = xrealloc(bq->buf, bq->max);
+    bq->buf = (char*) xrealloc(bq->buf, bq->max);
 }
 
 /* Allocate a new byteq with space for initial_size bytes.
@@ -53,10 +53,10 @@ byteq_new(size_t initial_size)
 {
     ByteQ *bq;
 
-    bq = xmalloc(sizeof(ByteQ));
+    bq = (ByteQ*) xmalloc(sizeof(ByteQ));
     bq->cur = 0;
     bq->max = MAX(1, initial_size);
-    bq->buf = xmalloc(initial_size);
+    bq->buf = (char*) xmalloc(initial_size);
 
     return bq;
 }
@@ -79,7 +79,7 @@ byteq_assure(ByteQ *bq, size_t max)
 {
     if (max > bq->max) {
         bq->max = max;
-        bq->buf = xrealloc(bq->buf, bq->max);
+        bq->buf = (char*) xrealloc(bq->buf, bq->max);
     }
 }
 

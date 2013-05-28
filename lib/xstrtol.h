@@ -30,20 +30,17 @@
 # endif
 
 # ifndef _STRTOL_ERROR
-enum strtol_error
-{
-    LONGINT_OK = 0,
 
-    /* These two values can be ORed together, to indicate that both
-       errors occurred.  */
-    LONGINT_OVERFLOW = 1,
-    LONGINT_INVALID_SUFFIX_CHAR = 2,
+#define LONGINT_OK  0
 
-    LONGINT_INVALID_SUFFIX_CHAR_WITH_OVERFLOW = (LONGINT_INVALID_SUFFIX_CHAR
-            | LONGINT_OVERFLOW),
-    LONGINT_INVALID = 4
-};
-typedef enum strtol_error strtol_error;
+/* These two values can be ORed together, to indicate that both errors occurred.  */
+#define   LONGINT_OVERFLOW              1
+#define   LONGINT_INVALID_SUFFIX_CHAR   2
+#define   LONGINT_INVALID_SUFFIX_CHAR_WITH_OVERFLOW  (LONGINT_INVALID_SUFFIX_CHAR | LONGINT_OVERFLOW)
+#define   LONGINT_INVALID  4
+
+typedef unsigned strtol_error;
+
 # endif
 
 # define _DECLARE_XSTRTOL(name, type) \
@@ -87,3 +84,4 @@ _DECLARE_XSTRTOL (xstrtoumax, uintmax_t)
   _STRTOL_ERROR (0, Str, Argument_type_string, Err)
 
 #endif /* not XSTRTOL_H_ */
+

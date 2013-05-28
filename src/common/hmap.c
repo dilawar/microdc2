@@ -128,7 +128,7 @@ hmap_rehash(HMap *map)
 
     map->buckets_length = (map->buckets_length * 2) + 1;
     map->threshold = (uint32_t) (map->buckets_length * map->load_factor);
-    map->buckets = xmalloc(map->buckets_length * sizeof(HMapEntry *));
+    map->buckets = (HMapEntry**) xmalloc(map->buckets_length * sizeof(HMapEntry *));
     memset(map->buckets, 0, map->buckets_length * sizeof(HMapEntry *));
 
     for (i = 0; i < old_capacity; i++) {
@@ -172,10 +172,10 @@ hmap_new(void)
 {
     HMap *map;
 
-    map = xmalloc(sizeof(HMap));
+    map = (HMap*) xmalloc(sizeof(HMap));
     map->buckets_length = DEFAULT_CAPACITY;
     map->load_factor = DEFAULT_LOAD_FACTOR;
-    map->buckets = xmalloc(map->buckets_length * sizeof(HMapEntry *));
+    map->buckets = (HMapEntry**) xmalloc(map->buckets_length * sizeof(HMapEntry *));
     map->threshold = (uint32_t) (map->buckets_length * map->load_factor);
     map->size = 0;
     map->hash = (hash_fn_t) strhash;
@@ -294,7 +294,7 @@ hmap_put(HMap *map, void *key, void *value)
         index = hmap_hash(map, key);
     }
 
-    entry = xmalloc(sizeof(HMapEntry));
+    entry = (HMapEntry*) xmalloc(sizeof(HMapEntry));
     entry->key = key;
     entry->value = value;
     entry->next = map->buckets[index];
@@ -363,33 +363,35 @@ hmap_iterator(HMap *map, HMapIterator *it)
  * function. But no other entry.
  */
 void
-hmap_foreach_value(HMap *map, void (*iterator)())
+hmap_foreach_value(HMap *map, void (*iterator)(void*))
 {
     uint32_t c;
 
     for (c = 0; c < map->buckets_length; c++) {
         HMapEntry *entry;
-        for (entry = map->buckets[c]; entry != NULL; ) {
+        for (entry = map->buckets[c]; entry != NULL; ) 
+        {
             HMapEntry *next = entry->next;
-            iterator(entry->value);
+            iterator((void*)entry->value);
             entry = next;
         }
     }
 }
 
-void
-hmap_foreach_key(HMap *map, void (*iterator)())
+  void
+hmap_foreach_key(HMap *map, void (*iterator)(void*))
 {
-    uint32_t c;
-
-    for (c = 0; c < map->buckets_length; c++) {
-        HMapEntry *entry;
-        for (entry = map->buckets[c]; entry != NULL; ) {
-            HMapEntry *next = entry->next;
-            iterator(entry->key);
-            entry = next;
-        }
+  uint32_t c;
+  for (c = 0; c < map->buckets_length; c++) 
+  {
+    HMapEntry *entry;
+    for (entry = map->buckets[c]; entry != NULL; ) 
+    {
+      HMapEntry *next = entry->next;
+      iterator(entry->key);
+      entry = next;
     }
+  }
 }
 
 void

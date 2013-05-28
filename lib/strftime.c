@@ -68,7 +68,7 @@ extern char *tzname[];
 #  define mbrlen(s, n, ps) mblen (s, n)
 #  define mbsinit(ps) (*(ps) == 0)
 # endif
-static const mbstate_t mbstate_zero;
+static const mbstate_t mbstate_zero = {};
 #endif
 
 #include <limits.h>

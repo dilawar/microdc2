@@ -56,7 +56,7 @@ xgethostname (void)
          even when the name is as long as the supplied buffer.  */
         size_t size_1;
 
-        hostname = x2realloc (hostname, &size);
+        hostname = (char*) x2realloc (hostname, &size);
         size_1 = size - 1;
         hostname[size_1 - 1] = '\0';
         errno = 0;

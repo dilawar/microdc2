@@ -31,10 +31,10 @@ ptrv_new_with_size(uint32_t initial_size)
 {
     PtrV *pv;
 
-    pv = xmalloc(sizeof(PtrV));
+    pv = (PtrV*) xmalloc(sizeof(PtrV));
     pv->cur = 0;
     pv->max = MAX(1, initial_size);
-    pv->buf = xmalloc(pv->max * sizeof(void *));
+    pv->buf = (void**) xmalloc(pv->max * sizeof(void *));
 
     return pv;
 }
@@ -65,7 +65,7 @@ ptrv_append(PtrV *pv, void *value)
 {
     if (pv->cur >= pv->max) {
         pv->max = MAX(1, pv->max*2);
-        pv->buf = xrealloc(pv->buf, pv->max * sizeof(void *));
+        pv->buf = (void**) xrealloc(pv->buf, pv->max * sizeof(void *));
     }
     pv->buf[pv->cur] = value;
     pv->cur++;
@@ -80,7 +80,7 @@ ptrv_prepend_n(PtrV *pv, uint32_t count, void *value)
 
     if (pv->cur+count > pv->max) {
         pv->max = MAX(pv->cur+count, pv->max*2);
-        pv->buf = xrealloc(pv->buf, pv->max*sizeof(void *));
+        pv->buf = (void**) xrealloc(pv->buf, pv->max*sizeof(void *));
     }
     memmove(pv->buf+count, pv->buf, pv->cur*sizeof(void *));
 
@@ -167,7 +167,7 @@ ptrv_insort(PtrV *pv, void *element, comparison_fn_t comparator)
         if (cmp <= 0) {
             if (pv->cur >= pv->max) {
                 pv->max = MAX(1, pv->max * 2);
-                pv->buf = xrealloc(pv->buf, pv->max * sizeof(void *));
+                pv->buf = (void**) xrealloc(pv->buf, pv->max * sizeof(void *));
             }
             memmove(pv->buf+c+1, pv->buf+c, sizeof(void *)*(pv->cur-c));
             pv->buf[c] = element;

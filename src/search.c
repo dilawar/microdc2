@@ -24,7 +24,10 @@
 #include <arpa/inet.h>		/* ? */
 #include <sys/socket.h>		/* ? */
 #include <netinet/in.h>		/* ? */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
+
+#include <climits>
 #include <time.h>		/* ? */
 #include "xalloc.h"		/* Gnulib */
 #include "xstrndup.h"		/* Gnulib */
@@ -33,6 +36,7 @@
 #define _(s) gettext(s)
 #define N_(s) gettext_noop(s)
 #include "common/strbuf.h"
+#include "common/substrcmp.h"
 #include "common/intutil.h"
 #include "microdc.h"
 
@@ -84,11 +88,11 @@ search_string_new(DCSearchString *sp, const char *p, int len)
     int c;
     unsigned char *u_str;
 
-    u_str = xstrndup(p, len);
+    u_str = (unsigned char*) xstrndup(p, len);
     for (c = 0; c < len; c++)
         u_str[c] = tolower(u_str[c]);
     sp->len = len;
-    sp->str = u_str;
+    sp->str = (char*) u_str;
 
     for (c = 0; c < 256; c++)
         sp->delta[c] = len+1;
@@ -130,7 +134,7 @@ parse_hash(char *str, DCSearchSelection *ss)
         /* TTH hash lookup */
 
         ss->patterncount = 1;
-        ss->patterns = xmalloc(sizeof(DCSearchString));
+        ss->patterns = (DCSearchString*) xmalloc(sizeof(DCSearchString));
         search_hash_new(ss->patterns, str+4, len-4);
         return true;
     }
@@ -155,7 +159,7 @@ parse_search_strings(char *str, DCSearchSelection *ss)
     if (ss->patterncount == 0)
         return false;
 
-    ss->patterns = xmalloc(sizeof(DCSearchString) * ss->patterncount);
+    ss->patterns = (DCSearchString*) xmalloc(sizeof(DCSearchString) * ss->patterncount);
 
     c = 0;
     for (t1 = str; (t2 = strchr(t1, '$')) != NULL; t1 = t2+1) {
@@ -181,7 +185,7 @@ match_file_extension(const char *filename, DCSearchDataType type)
     if (t1 == NULL)
         return true;
 
-    ext = strrchr(filename, '.');
+    ext = (char*) strrchr(filename, '.');
     if (ext == NULL)
         return false;
     ext++;
@@ -235,16 +239,16 @@ parse_search_selection(char *str, DCSearchSelection *data)
     if (sizeres) {
         if (sizemin) {
             data->size_min = size;
-            data->size_max = UINT64_MAX;
+            data->size_max = LLONG_MAX;
         } else {
             data->size_min = 0;
             data->size_max = size;
         }
     } else {
         data->size_min = 0;
-        data->size_max = UINT64_MAX;
+        data->size_max = LLONG_MAX;
     }
-    data->datatype = datatype[0]-'1';
+    data->datatype = (DCSearchDataType) (datatype[0]-'1');
 
     if (data->datatype == DC_SEARCH_CHECKSUM) {
         return parse_hash(str, data);
@@ -312,38 +316,41 @@ append_result(DCFileList *node, DCUserInfo *ui, struct sockaddr_in *addr)
 
     free_slots = used_ul_slots > my_ul_slots ? 0 : my_ul_slots-used_ul_slots;
 
-    conv_rpath = main_to_hub_string(rpath);
-    hub_my_nick = main_to_hub_string(my_nick);
-    hub_hub_name = main_to_hub_string(hub_name);
-    if ( ui != NULL)
+    if(!searchUsersWithFreeSlot && free_slots > 0)
+    {
+      conv_rpath = main_to_hub_string(rpath);
+      hub_my_nick = main_to_hub_string(my_nick);
+      hub_hub_name = main_to_hub_string(hub_name);
+      if ( ui != NULL)
         hub_ui_nick = main_to_hub_string(ui->nick);
-    else
+      else
         hub_ui_nick = NULL;
 
-    strbuf_appendf(sb, "$SR %s %s", hub_my_nick, conv_rpath);
+      strbuf_appendf(sb, "$SR %s %s", hub_my_nick, conv_rpath);
 
-    if (node->type == DC_TYPE_REG)
+      if (node->type == DC_TYPE_REG)
         strbuf_appendf(sb, "\x05%" PRIu64, node->size);
-    strbuf_appendf(sb, " %d/%d\x05", free_slots, my_ul_slots);
-    if (node->type == DC_TYPE_REG && node->reg.has_tth) {
+      strbuf_appendf(sb, " %d/%d\x05", free_slots, my_ul_slots);
+      if (node->type == DC_TYPE_REG && node->reg.has_tth) {
         unsigned char tth[40];
         memcpy(tth, node->reg.tth, sizeof(node->reg.tth));
         tth[39] = '\0';
         strbuf_appendf(sb, "TTH:%s", tth);
-    } else {
+      } else {
         strbuf_appendf(sb, "%s", hub_hub_name);
-    }
-    strbuf_appendf(sb, " (%s)", sockaddr_in_str(&hub_addr));
-    if (ui != NULL)
+      }
+      strbuf_appendf(sb, " (%s)", sockaddr_in_str(&hub_addr));
+      if (ui != NULL)
         strbuf_appendf(sb, "\x05%s", hub_ui_nick);
-    strbuf_append(sb, "|");
+      strbuf_append(sb, "|");
 
-    if (ui != NULL) {
+      if (ui != NULL) {
         hub_putf("%s", sb->buf); /* want hub_put here */
-    } else {
+      } else {
         add_search_result(addr, sb->buf, strbuf_length(sb));
+      }
     }
-
+    
     free(hub_ui_nick);
     free(hub_hub_name);
     free(hub_my_nick);
@@ -394,7 +401,7 @@ filelist_search(DCFileList *node, DCSearchSelection *data, int maxresults, DCUse
 
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *subnode = it.next(&it);
+            DCFileList *subnode = (DCFileList*) it.next(&it);
             curresults += filelist_search(subnode, data, maxresults-curresults, ui, addr);
             if ((data->datatype == DC_SEARCH_CHECKSUM && curresults > 0) ||
                     (curresults >= maxresults))
@@ -456,7 +463,7 @@ parse_search_response(char *buf, uint32_t len)
     if (token == NULL)
         return NULL; /* Invalid $SR message: Missing user. */
     local_nick = hub_to_main_string(token);
-    ui = hmap_get(hub_users, local_nick);
+    ui = (DCUserInfo*) hmap_get(hub_users, local_nick);
     free(local_nick);
 
     if (ui == NULL)
@@ -547,7 +554,7 @@ parse_search_response(char *buf, uint32_t len)
         return NULL; /* Invalid $SR message: Invalid hub address. */
     }
 
-    sr = xmalloc(sizeof(DCSearchResponse));
+    sr = (DCSearchResponse*) xmalloc(sizeof(DCSearchResponse));
     sr->userinfo = ui;
     ui->refcount++;
     sr->filename = filename;
@@ -646,18 +653,22 @@ add_search_request_type(char *args, DCSearchDataType datatype)
     time_t now;
     char *hub_args;
 
-    for (c = 0; args[c] != '\0'; c++) {
+    for (c = 0; args[c] != '\0'; c++) 
+    {
         if (args[c] == '|' || args[c] == ' ')
             args[c] = '$';
     }
 
     sel.size_min = 0;
-    sel.size_max = UINT64_MAX;
+    sel.size_max = LLONG_MAX;
     sel.datatype = datatype;
-    if (!parse_search_strings(args, &sel)) {
+    if (!parse_search_strings(args, &sel)) 
+    {
         int i = 0;
-        if (sel.patterns != NULL) {
-            for (i = 0; i < sel.patterncount; i++) {
+        if (sel.patterns != NULL) 
+        {
+            for (i = 0; i < sel.patterncount; i++) 
+            {
                 search_string_free(sel.patterns+i);
             }
             free(sel.patterns);
@@ -667,13 +678,15 @@ add_search_request_type(char *args, DCSearchDataType datatype)
         return false;
     }
 
-    for (c = 0; c < our_searches->cur; c++) {
-        sr = our_searches->buf[c];
+    for (c = 0; c < our_searches->cur; c++) 
+    {
+        sr = (DCSearchRequest*) our_searches->buf[c];
         if (compare_search_selection(&sel, &sr->selection) == 0)
             break;
     }
 
-    if (time(&now) == (time_t) -1) {
+    if (time(&now) == (time_t) -1) 
+    {
         warn(_("Cannot get current time - %s\n"), errstr);
         if (sel.patterns != NULL) {
             int i = 0;
@@ -685,7 +698,8 @@ add_search_request_type(char *args, DCSearchDataType datatype)
         return false;
     }
 
-    if (c < our_searches->cur) {
+    if (c < our_searches->cur) 
+    {
         screen_putf(_("Reissuing search %d.\n"), c+1);
         if (sel.patterns != NULL) {
             int i = 0;
@@ -695,9 +709,11 @@ add_search_request_type(char *args, DCSearchDataType datatype)
             free(sel.patterns);
         }
         sr->issue_time = now;
-    } else {
+    } 
+    else 
+    {
         screen_putf(_("Issuing new search with index %d.\n"), c+1);
-        sr = xmalloc(sizeof(DCSearchRequest));
+        sr = (DCSearchRequest*) xmalloc(sizeof(DCSearchRequest));
         sr->selection = sel;
         sr->responses = ptrv_new();
         sr->issue_time = now;
@@ -725,57 +741,51 @@ add_search_request_type(char *args, DCSearchDataType datatype)
 bool
 add_search_request(char *args)
 {
-  /* Find if -t is specified. If yes then search that particular type else
-   * search any. 
-   */
-  if(NULL != strstr(args, "$$"))
+  if(NULL != strstr(args, "$$vi"))
   {
-    if(NULL != strstr(args, "$$vi"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_VIDEO);
-    }
-    else if(NULL != strstr(args, "$$au"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_AUDIO);
-    }
-    else if(NULL != strstr(args, "$$do"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_DOCUMENTS);
-    }
-    else if(NULL != strstr(args, "$$fo"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_FOLDERS);
-    }
-    else if(NULL != strstr(args, "$$co"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_COMPRESSED);
-    }
-    else if(NULL != strstr(args, "$$ex"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_EXECUTABLES);
-    }
-    else if(NULL != strstr(args, "$$pi"))
-    {
-      char searchString[200];
-      searchStringFromArg(searchString, args);
-      return add_search_request_type(searchString, DC_SEARCH_PICTURES);
-    }
-    else 
-    {
-      return add_search_request_type(args, DC_SEARCH_ANY);
-    }
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_VIDEO);
+  }
+  else if(NULL != strstr(args, "$$au"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_AUDIO);
+  }
+  else if(NULL != strstr(args, "$$do"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_DOCUMENTS);
+  }
+  else if(NULL != strstr(args, "$$fo"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_FOLDERS);
+  }
+  else if(NULL != strstr(args, "$$co"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_COMPRESSED);
+  }
+  else if(NULL != strstr(args, "$$ex"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_EXECUTABLES);
+  }
+  else if(NULL != strstr(args, "$$pi"))
+  {
+    char searchString[200];
+    searchStringFromArg(searchString, args, "$$");
+    return add_search_request_type(searchString, DC_SEARCH_PICTURES);
+  }
+  else 
+  {
+    return add_search_request_type(args, DC_SEARCH_ANY);
   }
 }
 
@@ -810,7 +820,7 @@ handle_search_result(char *buf, uint32_t len)
     }
 
     for (c = 0; c < our_searches->cur; c++) {
-        DCSearchRequest *sd = our_searches->buf[c];
+        DCSearchRequest *sd = (DCSearchRequest*) our_searches->buf[c];
 
         if (sd->issue_time + SEARCH_TIME_THRESHOLD <= now)
             continue;
@@ -821,7 +831,7 @@ handle_search_result(char *buf, uint32_t len)
 
             /* This is slow, but better than dupes... */
             for (d = 0; d < sd->responses->cur; d++) {
-                if (compare_search_response(sd->responses->buf[d], sr) == 0) {
+                if (compare_search_response( (DCSearchResponse*) sd->responses->buf[d], sr) == 0) {
                     screen_putf(_("Result has been added earlier to search %d.\n"), c+1);
                     break;
                 }

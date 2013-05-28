@@ -25,16 +25,20 @@
 #include <config.h>
 #endif
 #include <stdbool.h>		/* Gnulib/C99/POSIX */
+#include <climits>
 #include <string.h>		/* C89 */
 #include <stdint.h>		/* Gnulib/C99/POSIX */
 #include <ctype.h>		/* C89 */
 #include "xalloc.h"		/* Gnulib */
 #include "strbuf.h"
 #include "quoting.h"
+#include "lib/stdint_.h"
 
 #define HEX_TO_INT(x) \
     ( (x)>='0' && (x)<='9' ? (x)-'0' : ((x)>='A' && (x)<='F' ? (x)-'A'+10 : (x)-'a'+10 ))
 #define IS_OCT_DIGIT(d) ( (d) >= '0' && (d) <= '7' )
+
+#define UINTPTR_MAX ULONG_MAX
 
 /* Quote STRING with double quotes if QUOTED is true, otherwise
  * by escaping whitespace, double quote and backslash as well
@@ -160,9 +164,9 @@ dequote_words_full(const char *str, bool quoted, bool c_hex_unescape, bool c_oct
     char *r;
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) ULONG_MAX;
 
-    result = r = xmalloc(strlen(str) + 1);
+    result = r = (char*) xmalloc(strlen(str) + 1);
     for (p = str; p < maxend && *p != '\0'; p++) {
         if (*p == '\\') {
             p++;
@@ -254,7 +258,7 @@ find_word_start(const char *str, const char *maxend)
     const char *whitespace = " \n\t";
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) UINTPTR_MAX;
 
     for (; str < maxend && *str != '\0'; str++) {
         if (strchr(whitespace, *str) == NULL)
@@ -278,7 +282,7 @@ find_word_end_termchar(const char *str, const char *maxend, char termchar)
     bool quoted = false;
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) UINTPTR_MAX;
 
     str = find_word_start(str, maxend);
     for (; str < maxend && *str != '\0'; str++) {
@@ -320,7 +324,7 @@ find_last_unquoted_char(const char *str, const char *maxend, char ch)
     const char *match = NULL;
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) UINTPTR_MAX;
 
     for (; str < maxend && *str != '\0'; str++) {
         if (*str == '\\') {
@@ -348,7 +352,7 @@ find_unquoted_char(const char *str, const char *maxend, char ch)
     bool quoted = false;
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) UINTPTR_MAX;
 
     for (; str < maxend && *str != '\0'; str++) {
         if (*str == '\\') {
@@ -377,7 +381,7 @@ find_unquoted_leading_char(const char *str, const char *maxend, char ch)
     bool word = false;
 
     if (maxend == NULL)
-        maxend = (void *) UINTPTR_MAX;
+        maxend = (const char *) UINTPTR_MAX;
 
     for (; str < maxend && *str != '\0'; str++) {
         if (*str == '\\') {
@@ -456,11 +460,11 @@ get_word_array_dequoted(const char *str, const char *strend, int *argc)
     char **array;
 
     if (strend == NULL)
-        strend = (void *) UINTPTR_MAX;
+        strend = (const char *) UINTPTR_MAX;
 
     array_cur = 0;
     array_max = 8;
-    array = xmalloc(array_max * sizeof(char *));
+    array = (char**) xmalloc(array_max * sizeof(char *));
 
     str = find_word_start(str, strend);
     if (str < strend && *str != '\0') {
@@ -469,7 +473,7 @@ get_word_array_dequoted(const char *str, const char *strend, int *argc)
             end = find_word_end(str, strend);
             if (array_cur >= array_max) {
                 array_max *= 2;
-                array = xrealloc(array, array_max * sizeof(char *));
+                array = (char**) xrealloc(array, array_max * sizeof(char *));
             }
             array[array_cur++] = dequote_words(str, false, end);
             if (end >= strend || *end == '\0')
@@ -480,7 +484,7 @@ get_word_array_dequoted(const char *str, const char *strend, int *argc)
 
     if (array_cur >= array_max) {
         array_max *= 2;
-        array = xrealloc(array, array_max * sizeof(char *));
+        array = (char**) xrealloc(array, array_max * sizeof(char *));
     }
     array[array_cur] = NULL;
     return array;
@@ -507,7 +511,7 @@ get_subwords_dequoted_termchar(const char *str, const char *strend, int index, s
     return NULL;*/
 
     if (strend == NULL)
-        strend = (void *) UINTPTR_MAX;
+        strend = (const char *) UINTPTR_MAX;
 
     for (c = 0; c < index; c++) {
         str = find_word_end_termchar(str, strend, termchar);

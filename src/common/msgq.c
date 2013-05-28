@@ -34,7 +34,7 @@
 MsgQ *
 msgq_new(int fd)
 {
-    MsgQ *mq = xmalloc(sizeof(MsgQ));
+    MsgQ *mq = (MsgQ*) xmalloc(sizeof(MsgQ));
     mq->fd = fd;
     mq->queue = byteq_new(DEFAULT_MSGQ_BYTEQ_SIZE);
     return mq;
@@ -302,12 +302,12 @@ msgq_vget(MsgQ *mq, va_list args)
             if (len == SIZE_MAX) {
                 *aryptr = NULL;
             } else {
-                *aryptr = xmalloc((len+1) * sizeof(char *));
+                *aryptr = (char**) xmalloc((len+1) * sizeof(char *));
                 for (c = 0; c < len; c++) {
                     size_t lenstr;
                     memcpy(&lenstr, buf, sizeof(lenstr));
                     buf += sizeof(lenstr);
-                    (*aryptr)[c] = xmemdup(buf, lenstr);
+                    (*aryptr)[c] = (char*) xmemdup(buf, lenstr);
                     buf += lenstr;
                 }
                 (*aryptr)[c] = NULL;

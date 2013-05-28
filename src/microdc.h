@@ -42,12 +42,11 @@
 
 #define SEARCH_TIME_THRESHOLD 60        /* Add no more results to searches after this many seconds elapsed */
 
-typedef enum {
-    DC_CPL_DIR	= 1 << 0,	/* complete directories or symlinks to directories */
-    DC_CPL_REG	= 1 << 1,	/* complete regular files or symlinks to regular files */
-    DC_CPL_EXE	= 1 << 2,	/* complete regular files or symlinks to regular files that are executable according to access */
-    DC_CPL_DOT	= 1 << 3,	/* always complete files and dirs starting with `.', even if file part of `word' does not start with `.' */
-} DCFSCompletionFlags;
+#define    DC_CPL_DIR	 1 << 0	/* complete directories or symlinks to directories */
+#define    DC_CPL_REG	 1 << 1	/* complete regular files or symlinks to regular files */
+#define    DC_CPL_EXE	 1 << 2	/* complete regular files or symlinks to regular files that are executable according to access */
+#define    DC_CPL_DOT	 1 << 3	/* always complete files and dirs starting with `.', even if file part of `word' does not start with `.' */
+typedef unsigned  DCFSCompletionFlags;
 
 typedef enum {
     DC_DF_DEBUG			= 1 << 0, /* Various debug messages */
@@ -646,5 +645,7 @@ EXPORT_ICONV_CONVERSION(utf8, hub);
 EXPORT_ICONV_CONVERSION(hub, utf8);
 #endif
 
+/* Static variable to enable and disable search users with free-slot  */
+static bool searchUsersWithFreeSlot = false;
 
 #endif

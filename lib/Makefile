@@ -110,7 +110,7 @@ AR = ar
 ARFLAGS = cru
 libgnu_a_AR = $(AR) $(ARFLAGS)
 am__DEPENDENCIES_1 =
-libgnu_a_DEPENDENCIES =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o  $(am__DEPENDENCIES_1)
+libgnu_a_DEPENDENCIES =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}error$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o  $(am__DEPENDENCIES_1)
 am_libgnu_a_OBJECTS = argmatch.$(OBJEXT) basename.$(OBJEXT) \
 	stripslash.$(OBJEXT) full-read.$(OBJEXT) full-write.$(OBJEXT) \
 	iconvme.$(OBJEXT) progname.$(OBJEXT) version-etc.$(OBJEXT) \
@@ -139,10 +139,10 @@ AUTOCONF = ${SHELL} /home/dilawar/Works/github/microdc2/build-aux/missing --run 
 AUTOHEADER = ${SHELL} /home/dilawar/Works/github/microdc2/build-aux/missing --run autoheader
 AUTOMAKE = ${SHELL} /home/dilawar/Works/github/microdc2/build-aux/missing --run automake-1.9
 AWK = gawk
-CC = gcc
+CC = g++
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
-CPP = gcc -E
+CPP = g++ -E
 CPPFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
@@ -159,7 +159,7 @@ GMSGFMT = /usr/bin/msgfmt
 GREP = /bin/grep
 HAVE_LONG_64BIT = 
 HAVE_LONG_LONG_64BIT = 
-HAVE__BOOL = 1
+HAVE__BOOL = 0
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
@@ -169,14 +169,14 @@ INTL_MACOSX_LIBS =
 LDFLAGS = 
 LIBICONV = 
 LIBINTL = 
-LIBOBJS =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o
+LIBOBJS =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}error$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o
 LIBS = 
 LIBXML2_CFLAGS = -I/usr/include/libxml2  
 LIBXML2_LIBS = -lxml2  
 LOCALEDIR = /usr/local/share/locale
 LTLIBICONV = 
 LTLIBINTL = 
-LTLIBOBJS =  ${LIBOBJDIR}strftime$U.lo ${LIBOBJDIR}dirname$U.lo ${LIBOBJDIR}exitfail$U.lo ${LIBOBJDIR}human$U.lo ${LIBOBJDIR}quote$U.lo ${LIBOBJDIR}quotearg$U.lo ${LIBOBJDIR}safe-read$U.lo ${LIBOBJDIR}safe-write$U.lo ${LIBOBJDIR}sig2str$U.lo ${LIBOBJDIR}vasnprintf$U.lo ${LIBOBJDIR}printf-args$U.lo ${LIBOBJDIR}printf-parse$U.lo ${LIBOBJDIR}asnprintf$U.lo ${LIBOBJDIR}xmalloc$U.lo ${LIBOBJDIR}xstrtol$U.lo ${LIBOBJDIR}xstrtoul$U.lo
+LTLIBOBJS =  ${LIBOBJDIR}strftime$U.lo ${LIBOBJDIR}dirname$U.lo ${LIBOBJDIR}error$U.lo ${LIBOBJDIR}exitfail$U.lo ${LIBOBJDIR}human$U.lo ${LIBOBJDIR}quote$U.lo ${LIBOBJDIR}quotearg$U.lo ${LIBOBJDIR}safe-read$U.lo ${LIBOBJDIR}safe-write$U.lo ${LIBOBJDIR}sig2str$U.lo ${LIBOBJDIR}vasnprintf$U.lo ${LIBOBJDIR}printf-args$U.lo ${LIBOBJDIR}printf-parse$U.lo ${LIBOBJDIR}asnprintf$U.lo ${LIBOBJDIR}xmalloc$U.lo ${LIBOBJDIR}xstrtol$U.lo ${LIBOBJDIR}xstrtoul$U.lo
 MAINT = #
 MAINTAINER_MODE_FALSE = 
 MAINTAINER_MODE_TRUE = #
@@ -207,7 +207,7 @@ STRIP =
 USE_NLS = yes
 VERSION = 0.15.6
 XGETTEXT = /usr/bin/xgettext
-ac_ct_CC = gcc
+ac_ct_CC = g++
 am__fastdepCC_FALSE = #
 am__fastdepCC_TRUE = 
 am__include = include
@@ -260,7 +260,7 @@ libgnu_a_SOURCES = argmatch.h argmatch.c basename.c stripslash.c \
 	version-etc.h version-etc.c xalloc-die.c xgethostname.h \
 	xgethostname.c xsize.h xstrndup.h xstrndup.c xstrtoumax.c \
 	xvasprintf.h xvasprintf.c xasprintf.c
-libgnu_a_LIBADD =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o  $(LTLIBICONV)
+libgnu_a_LIBADD =  ${LIBOBJDIR}strftime$U.o ${LIBOBJDIR}dirname$U.o ${LIBOBJDIR}error$U.o ${LIBOBJDIR}exitfail$U.o ${LIBOBJDIR}human$U.o ${LIBOBJDIR}quote$U.o ${LIBOBJDIR}quotearg$U.o ${LIBOBJDIR}safe-read$U.o ${LIBOBJDIR}safe-write$U.o ${LIBOBJDIR}sig2str$U.o ${LIBOBJDIR}vasnprintf$U.o ${LIBOBJDIR}printf-args$U.o ${LIBOBJDIR}printf-parse$U.o ${LIBOBJDIR}asnprintf$U.o ${LIBOBJDIR}xmalloc$U.o ${LIBOBJDIR}xstrtol$U.o ${LIBOBJDIR}xstrtoul$U.o  $(LTLIBICONV)
 EXTRA_DIST = alloca_.h fnmatch_.h fnmatch_loop.c getopt_.h \
 	getopt_int.h stdbool_.h stdint_.h
 BUILT_SOURCES = $(ALLOCA_H) $(FNMATCH_H) $(GETOPT_H) $(STDBOOL_H) \

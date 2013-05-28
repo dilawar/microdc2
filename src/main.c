@@ -29,6 +29,7 @@
 #include <sys/types.h>		/* ? */
 #include <sys/wait.h>		/* POSIX: waitpid */
 #include <unistd.h>		/* POSIX */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
 #include <fcntl.h>		/* ? */
 #include <getopt.h>		/* Gnulib/POSIX */
@@ -189,7 +190,7 @@ validate_nick(DCUserConn *uc, const char *nick)
 {
     DCUserInfo *ui;
 
-    ui = hmap_remove(pending_userinfo, nick);
+    ui = (DCUserInfo*) hmap_remove(pending_userinfo, nick);
     if (ui != NULL) {
         if (ui->conn_count < DC_USER_MAX_CONN) {
             uc->info = ui;
@@ -205,7 +206,7 @@ validate_nick(DCUserConn *uc, const char *nick)
         return false;
     }
 
-    ui = hmap_get(hub_users, nick);
+    ui = (DCUserInfo*) hmap_get(hub_users, nick);
     if (ui != NULL) {
         if (ui->conn_count < DC_USER_MAX_CONN) {
             uc->info = ui;
@@ -347,7 +348,7 @@ handle_ended_download(DCUserConn *uc, bool success, const char *reason)
         queued = uc->info->download_queue->buf[uc->queue_pos];
         uc->queue_pos++;
         */
-        queued = ptrv_remove(uc->info->download_queue, uc->queue_pos);
+        queued = (DCQueuedFile*) ptrv_remove(uc->info->download_queue, uc->queue_pos);
         uc->queued_valid = false;
         if (success) {
             queued->status = DC_QS_DONE;
@@ -414,7 +415,7 @@ user_connection_new(struct sockaddr_in *addr, int user_socket)
     if (user_socket >= 0 && close(user_socket) < 0)
         warn(_("Cannot close socket - %s\n"), errstr);
 
-    uc = xmalloc(sizeof(DCUserConn));
+    uc = (DCUserConn*) xmalloc(sizeof(DCUserConn));
     uc->pid = pid;
     uc->info = NULL;
     uc->occupied_slot = 0;
@@ -434,7 +435,7 @@ user_connection_new(struct sockaddr_in *addr, int user_socket)
     uc->put_mq = msgq_new(put_fd[1]);
     FD_SET(uc->get_mq->fd, &read_fds);
     if (user_conn_unknown_free->cur > 0) {
-        uc->name = ptrv_remove_first(user_conn_unknown_free);
+        uc->name = (char*) ptrv_remove_first(user_conn_unknown_free);
     } else {
         /* TRANSLATORS: This represents the connection name used when
          * the user name is not yet known. It must not contains '|',
@@ -571,7 +572,7 @@ user_result_fd_readable(DCUserConn *uc)
             uint32_t flag;
 
             msgq_get(uc->get_mq, MSGQ_INT, &id, MSGQ_INT32, &flag, MSGQ_STR, &msg, MSGQ_END);
-            flag_putf(flag, _("User %s: %s"), quotearg(uc->name), msg); /* msg already quoted */
+            flag_putf((DCDisplayFlag)flag, _("User %s: %s"), quotearg(uc->name), msg); /* msg already quoted */
             free(msg);
             break;
         }
@@ -667,7 +668,7 @@ user_result_fd_readable(DCUserConn *uc)
                 DCQueuedFile *queued;
                 char *local_file;
 
-                queued = uc->info->download_queue->buf[uc->queue_pos];
+                queued = (DCQueuedFile*) uc->info->download_queue->buf[uc->queue_pos];
                 if (queued->status != DC_QS_DONE) {
                     local_file = resolve_download_file(uc->info, queued);
                     uc->queued_valid = true;
@@ -703,7 +704,7 @@ user_result_fd_readable(DCUserConn *uc)
             bool permit_transfer = false;
 
             msgq_get(uc->get_mq, MSGQ_INT, &id, MSGQ_INT, &type, MSGQ_STR, &remote_file, MSGQ_END);
-            local_file = resolve_upload_file(uc->info, type, remote_file, &flag, &size);
+            local_file = (char*) resolve_upload_file(uc->info, (DCAdcgetType) type, remote_file, &flag, &size);
             free(remote_file);
             uc->transfer_file = NULL;
             if (local_file != NULL) {
@@ -770,7 +771,7 @@ transfer_completion_generator(DCCompletionInfo *ci)
     /* XXX: perhaps use a tmap for transfers as well? to speed up this */
     hmap_iterator(user_conns, &it);
     while (it.has_next(&it)) {
-        DCUserConn *uc = it.next(&it);
+        DCUserConn *uc = (DCUserConn*) it.next(&it);
         if (strleftcmp(ci->word, uc->name) == 0)
             ptrv_append(ci->results, new_completion_entry(uc->name, NULL));
     }
@@ -923,7 +924,7 @@ add_search_result(struct sockaddr_in *addr, char *results, uint32_t resultlen)
             return;
     }
 
-    msg = xmalloc(sizeof(DCUDPMessage)+resultlen);
+    msg = (DCUDPMessage*) xmalloc(sizeof(DCUDPMessage)+resultlen);
     msg->addr = *addr;
     msg->len = resultlen;
     memcpy(msg->data, results, resultlen);
@@ -961,7 +962,7 @@ static void
 search_now_writable(void)
 {
     while (search_udpmsg_out->cur > 0) {
-        DCUDPMessage *msg = search_udpmsg_out->buf[0];
+        DCUDPMessage *msg = (DCUDPMessage*) search_udpmsg_out->buf[0];
         int res;
 
         /* <Erwin> I don't think you can send off half a UDP packet, no.
@@ -1339,7 +1340,7 @@ main (int argc, char **argv)
 
             hmap_iterator(user_conns, &it);
             while (running && it.has_next(&it)) {
-                DCUserConn *uc = it.next(&it);
+                DCUserConn *uc = (DCUserConn*) it.next(&it);
                 if (uc->put_mq != NULL && FD_ISSET(uc->put_mq->fd, &res_write_fds))
                     user_request_fd_writable(uc);
                 if (uc->get_mq != NULL && FD_ISSET(uc->get_mq->fd, &res_read_fds))
@@ -1373,7 +1374,7 @@ cleanup:
     ptrv_foreach(our_searches, (PtrVForeachCallback) free_search_request);
     ptrv_free(our_searches);
 
-    hmap_foreach_value(user_conns, user_conn_cancel);
+    hmap_foreach_value(user_conns, (void (*) (void*)) user_conn_cancel);
     /* XXX: follow up and wait for user connections to die? */
     hmap_free(user_conns);
 
@@ -1395,7 +1396,7 @@ cleanup:
 
     if (delete_files != NULL) {
         for (c = 0; c < delete_files->cur; c++) {
-            char *filename = delete_files->buf[c];
+            char *filename = (char*) delete_files->buf[c];
             struct stat st;
 
             if (stat(filename, &st) < 0) {
@@ -1413,7 +1414,7 @@ cleanup:
 
     if (delete_dirs != NULL) {
         for (c = 0; c < delete_dirs->cur; c++) {
-            char *filename = delete_dirs->buf[c];
+            char *filename = (char*) delete_dirs->buf[c];
             struct stat st;
 
             if (stat(filename, &st) < 0) {

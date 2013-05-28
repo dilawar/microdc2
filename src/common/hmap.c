@@ -372,7 +372,7 @@ hmap_foreach_value(HMap *map, void (*iterator)(void*))
         for (entry = map->buckets[c]; entry != NULL; ) 
         {
             HMapEntry *next = entry->next;
-            iterator(entry->value);
+            iterator((void*)entry->value);
             entry = next;
         }
     }

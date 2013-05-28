@@ -182,7 +182,7 @@ free_command(DCCommand *cmd)
 void
 command_finish(void)
 {
-    tmap_foreach_value(commands, (void (*) ())free_command);
+    tmap_foreach_value(commands, (void (*) (void*))free_command);
     tmap_free(commands);
 }
 

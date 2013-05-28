@@ -18,14 +18,14 @@
  */
 
 #include <config.h>
-#include <stdint.h>	/* Gnulib, C99 */
 #include <stdio.h>	/* C89 */
+#define __STDC_FORMAT_MACROS
+#include <stdint.h>	/* Gnulib, C99 */
 #include <inttypes.h>	/* ? */
 #include "intutil.h"
 #include <climits>
 
 
-#if  0     /* ----- #if 0 : If0Label_1 ----- */
 
 #define INT_STR_FUNC(n, t, m) \
     char * \
@@ -47,8 +47,6 @@ INT_STR_FUNC(int32_str, int32_t, PRIi32);
 INT_STR_FUNC(int64_str, int64_t, PRIi64);
 INT_STR_FUNC(int16_str, int16_t, PRIi16);
 INT_STR_FUNC(int8_str, int8_t, PRIi8);
-
-#endif     /* ----- #if 0 : If0Label_1 ----- */
 
 /* These are probably used very seldom, so they are disabled. */
 #if 0

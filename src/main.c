@@ -1374,7 +1374,7 @@ cleanup:
     ptrv_foreach(our_searches, (PtrVForeachCallback) free_search_request);
     ptrv_free(our_searches);
 
-    hmap_foreach_value(user_conns, (void (*) ()) user_conn_cancel);
+    hmap_foreach_value(user_conns, (void (*) (void*)) user_conn_cancel);
     /* XXX: follow up and wait for user connections to die? */
     hmap_free(user_conns);
 

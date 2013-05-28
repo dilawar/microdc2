@@ -372,7 +372,7 @@ hub_disconnect(void)
         hub_socket = -1;
     }
     if (hub_users != NULL) {
-        hmap_foreach_value(hub_users, (void (*) ())user_info_free);
+        hmap_foreach_value(hub_users, (void (*) (void*))user_info_free);
         hmap_clear(hub_users);
     }
     if (hub_sendq != NULL)
@@ -381,7 +381,7 @@ hub_disconnect(void)
         byteq_clear(hub_recvq);
     hub_recvq_last = 0;
     if (pending_userinfo != NULL) {
-        hmap_foreach_value(pending_userinfo, (void (*)())user_info_free);
+        hmap_foreach_value(pending_userinfo, (void (*)(void*))user_info_free);
         hmap_clear(pending_userinfo);
     }
     free(hub_name);
@@ -1126,7 +1126,7 @@ void hub_reload_users()
 {
     if (hub_putf("$GetNickList|")) {
         if (hub_users != NULL) {
-            hmap_foreach_value(hub_users, (void (*) ()) user_info_free);
+            hmap_foreach_value(hub_users, (void (*) (void*)) user_info_free);
             hmap_clear(hub_users);
         }
     }

@@ -197,7 +197,7 @@ filelist_free(DCFileList *node)
         case DC_TYPE_DIR:
             if (node->dir.real_path != NULL)
                 free(node->dir.real_path);
-            hmap_foreach_value(node->dir.children, (void (*) ())filelist_free);
+            hmap_foreach_value(node->dir.children, (void (*) (void*))filelist_free);
             hmap_free(node->dir.children);
             break;
         }

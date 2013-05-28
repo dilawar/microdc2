@@ -536,7 +536,7 @@ tmap_foreach_key(TMap *map, void (*iterator)(void*))
 }
 
 void
-tmap_foreach_value(TMap *map, void (*iterator)())
+tmap_foreach_value(TMap *map, void (*iterator)(void*))
 {
     if (map->root != &nil)
         tmap_foreach_nodes_value(map->root, (void (*) (void*))iterator);

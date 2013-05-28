@@ -33,7 +33,7 @@ substrcmp(const char *s1, const char *s2, size_t s2len)
 }
 
 
-void searchStringFromArg(char* searchString, const char* args, char* separator)
+void searchStringFromArg(char* searchString, const char* args, const char* separator)
 {
   int i = 0;
   for(i = 0 ; i < strlen(args) - 1; i++)

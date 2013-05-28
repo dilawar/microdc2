@@ -148,7 +148,7 @@ optparser_new(OptDetail *opts, int count, OptParserConfig field, ...)
 void
 optparser_free(OptParser *parser)
 {
-    tmap_foreach_key(parser->options, (void (*) ())free);
+    tmap_foreach_key(parser->options, (void (*) (void*))free);
     tmap_free(parser->options);
     free(parser->parse_state.error);
     free(parser);

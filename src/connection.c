@@ -70,7 +70,7 @@ decode_lock(const char *lock, size_t locklen, uint32_t basekey)
         }
     }
 
-    outkey = xmalloc(sizeof(char) * d);
+    outkey = (char*) xmalloc(sizeof(char) * d);
 
     d = 0;
     for (c = 0; c < locklen; c++) {
@@ -101,7 +101,7 @@ unescape_message(const char *str)
     char *out;
     char *cur;
 
-    cur = out = xmalloc(strlen(str)+1);
+    cur = out = (char*) xmalloc(strlen(str)+1);
     while (*str != '\0') {
         if (str[0] == '&') {
             if (str[1] == 'a' && str[2] == 'm' && str[3] == 'p' && str[4] == ';') {

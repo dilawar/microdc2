@@ -25,6 +25,8 @@
 #include <fcntl.h>		/* ? */
 #include <string.h>		/* C89 */
 #include <arpa/inet.h>		/* ? */
+
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* POSIX.1 (CX): PRI* */
 #include "xalloc.h"		/* Gnulib */
 #include "xstrndup.h"		/* Gnulib */
@@ -274,7 +276,7 @@ join_strings(char **strs, int count, char mid)
 
     for (c = 0; c < count; c++)
         len += strlen(strs[c]);
-    p = out = xmalloc(len);
+    p = out = (char*) xmalloc(len);
     for (c = 0; c < count ; c++) {
         p = stpcpy(p, strs[c]);
         *p = mid;

@@ -503,7 +503,7 @@ DState;
    (((UInt32)s->ll16[i]) | (GET_LL4(i) << 16))
 
 #define BZ_GET_SMALL(cccc)                            \
-      cccc = BZ2_indexIntoF ( s->tPos, s->cftab );    \
+      cccc = BZ2_indexIntoF ( (Int32) s->tPos, (Int32*) s->cftab );    \
       s->tPos = GET_LL(s->tPos);
 
 

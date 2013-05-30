@@ -96,7 +96,7 @@ char* tth(const char* filename, char **tthl, size_t *tthl_len)
         *tthl = NULL;
     }
 
-    tt_init(&tt, *tthl, level);
+    tt_init(&tt, (unsigned char*) *tthl, level);
     tt.leaf = buf;
     buf[0] = '\0';
 

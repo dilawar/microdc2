@@ -66,7 +66,7 @@ static TMapNode nil = { NULL, NULL, false, &nil, &nil, &nil };
 static int
 ptrcmp(const void *v0, const void *v1)
 {
-    return (int) (v0-v1);
+    return (int)v0- (int)v1;
 }
 
 static void
@@ -82,7 +82,7 @@ tmap_clear_nodes(TMapNode *node)
 TMap *
 tmap_new(void)
 {
-    TMap *map = xmalloc(sizeof(TMap));
+    TMap *map = (TMap*) xmalloc(sizeof(TMap));
 
     map->root = &nil;
     map->size = 0;
@@ -440,7 +440,7 @@ tmap_put(TMap *map, void *key, void *value)
         }
     }
 
-    node = xmalloc(sizeof(TMapNode));
+    node = (TMapNode*) xmalloc(sizeof(TMapNode));
     node->key = key;
     node->value = value;
     node->red = true;
@@ -509,7 +509,7 @@ predecessor(TMapNode *node)
 #endif
 
 static void
-tmap_foreach_nodes_key(TMapNode *node, void (*iterator)())
+tmap_foreach_nodes_key(TMapNode *node, void (*iterator)(void *))
 {
     if (node->left != &nil)
         tmap_foreach_nodes_key(node->left, iterator);
@@ -519,7 +519,7 @@ tmap_foreach_nodes_key(TMapNode *node, void (*iterator)())
 }
 
 static void
-tmap_foreach_nodes_value(TMapNode *node, void (*iterator)())
+tmap_foreach_nodes_value(TMapNode *node, void (*iterator)(void *))
 {
     if (node->left != &nil)
         tmap_foreach_nodes_value(node->left, iterator);
@@ -529,17 +529,17 @@ tmap_foreach_nodes_value(TMapNode *node, void (*iterator)())
 }
 
 void
-tmap_foreach_key(TMap *map, void (*iterator)())
+tmap_foreach_key(TMap *map, void (*iterator)(void*))
 {
     if (map->root != &nil)
         tmap_foreach_nodes_key(map->root, iterator);
 }
 
 void
-tmap_foreach_value(TMap *map, void (*iterator)())
+tmap_foreach_value(TMap *map, void (*iterator)(void*))
 {
     if (map->root != &nil)
-        tmap_foreach_nodes_value(map->root, iterator);
+        tmap_foreach_nodes_value(map->root, (void (*) (void*))iterator);
 }
 
 static bool

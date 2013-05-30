@@ -28,6 +28,7 @@
 #include <stdlib.h>		/* C89 */
 #include <dirent.h>		/* ? */
 #include <sys/types.h>		/* ? */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
 #include "full-read.h"		/* Gnulib */
 #include "xalloc.h"		/* Gnulib */
@@ -124,7 +125,7 @@ new_file_node(const char *name, DCFileType type, DCFileList *parent)
 {
     DCFileList *node;
 
-    node = xmalloc(sizeof(DCFileList));
+    node = (DCFileList*) xmalloc(sizeof(DCFileList));
     node->name = xstrdup(name);
     node->type = type;
     node->parent = parent;
@@ -183,7 +184,7 @@ get_child_node(DCFileList *node, const char *path)
         return node;
     if (IS_PARENT_DIR(path))
         return node->parent == NULL ? node : node->parent;
-    return hmap_get(node->dir.children, path);
+    return (DCFileList*) hmap_get(node->dir.children, path);
 }
 
 void
@@ -196,7 +197,7 @@ filelist_free(DCFileList *node)
         case DC_TYPE_DIR:
             if (node->dir.real_path != NULL)
                 free(node->dir.real_path);
-            hmap_foreach_value(node->dir.children, filelist_free);
+            hmap_foreach_value(node->dir.children, (void (*) (void*))filelist_free);
             hmap_free(node->dir.children);
             break;
         }
@@ -225,7 +226,7 @@ filelist_lookup_tth(DCFileList *node, const char *tth)
 
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *subnode = it.next(&it);
+            DCFileList *subnode = (DCFileList*) it.next(&it);
             res =  filelist_lookup_tth( subnode, tth);
             if (res)
                 return res;
@@ -356,7 +357,7 @@ file_node_compare(const void *i1, const void *i2)
                 && (tolower(*str1) != tolower(*str2))) {
             s1[0] = tolower(*str1);
             s2[0] = tolower(*str2);
-            res = strcoll(s1, s2);
+            res =  strcoll((const char*)s1, (const char*)s2);
             if (res != 0)
                 return res;
         }
@@ -378,10 +379,10 @@ get_sorted_file_list(DCFileList *node, uint32_t *out_count)
 
     assert(node->type == DC_TYPE_DIR);
     count = hmap_size(node->dir.children);
-    items = xmalloc((count+1) * sizeof(DCFileList *));
+    items = (DCFileList**) xmalloc((count+1) * sizeof(DCFileList *));
     hmap_iterator(node->dir.children, &it);
     for (c = 0; c < count; c++)
-        items[c] = it.next(&it);
+        items[c] = (DCFileList*) it.next(&it);
     items[count] = NULL;
     qsort(items, count, sizeof(DCFileList *), file_node_compare);
 
@@ -423,7 +424,7 @@ filelist_list(DCFileList *node, int mode)
         maxsize = 0;
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *subnode = it.next(&it);
+            DCFileList *subnode = (DCFileList*) it.next(&it);
 
             switch (subnode->type) {
             case DC_TYPE_REG:
@@ -621,7 +622,7 @@ filelist_to_string(DCFileList *node, StrBuf *sb, int level)
         free(fname);
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *subnode = it.next(&it);
+            DCFileList *subnode = (DCFileList*) it.next(&it);
             filelist_to_string(subnode, sb, level+1);
         }
     }
@@ -1002,7 +1003,7 @@ concat_filenames(const char *p1, const char *p2)
     if (p1[l1-1] == '/')
         l1--;
 
-    out = xmalloc(l1+1+l2+1);
+    out = (char*) xmalloc(l1+1+l2+1);
     memcpy(out, p1, l1);
     out[l1] = '/';
     memcpy(out+l1+1, p2, l2+1);
@@ -1074,18 +1075,18 @@ skip_slashes(char **bufptr, bool *quotedptr)
  *  - remove quotes and escapes
  */
 static bool
-dircomp_to_fnmatch_str(char **bufptr, bool *quotedptr, char **outptr)
+dircomp_to_fnmatch_str(const char **bufptr, bool *quotedptr, char **outptr)
 {
     StrBuf *out;
     char *buf;
     bool quoted;
     bool wildcards = false;
 
-    skip_slashes(bufptr, quotedptr);
+    skip_slashes( (char**) bufptr, quotedptr);
     out = strbuf_new();
 
     quoted = *quotedptr;
-    for (buf = *bufptr; *buf != '\0' && *buf != '/'; buf++) {
+    for (buf = (char*) *bufptr; *buf != '\0' && *buf != '/'; buf++) {
         if (*buf == '"')
             quoted = !quoted;
         else if (*buf == '\\' && buf[1] != '\0')
@@ -1095,7 +1096,7 @@ dircomp_to_fnmatch_str(char **bufptr, bool *quotedptr, char **outptr)
     }
 
     quoted = *quotedptr;
-    for (buf = *bufptr; *buf != '\0' && *buf != '/'; buf++) {
+    for (buf = (char*) *bufptr; *buf != '\0' && *buf != '/'; buf++) {
         if (*buf == '"') {
             quoted = !quoted;
         } else if (*buf == '\\') {
@@ -1260,7 +1261,7 @@ filelist_get_next(DCFileListIterator *it, DCFileList **node, char **name)
         return true;
     }
     if (it->it.has_next(&it->it)) {
-        *node = it->it.next(&it->it);
+        *node = (DCFileList*) it->it.next(&it->it);
         *name = (*node)->name;
         return true;
     }
@@ -1276,7 +1277,7 @@ remote_wildcard_expand(char *matchpath, bool *quotedptr, const char *basedir, DC
     DCFileList *node;
     DCFileListIterator it;
 
-    if (dircomp_to_fnmatch_str(&matchpath, quotedptr, &matchcomp)) {
+    if (dircomp_to_fnmatch_str((const char**) &matchpath, quotedptr, &matchcomp)) {
         filelist_iterator(basenode, &it);
         while (filelist_get_next(&it, &node, &nodename)) {
             if (fnmatch(matchcomp, nodename, FNM_PERIOD) == 0) {
@@ -1321,7 +1322,7 @@ remote_wildcard_complete(char *matchpath, bool *quotedptr, char *basedir, DCFile
     DCFileList *node;
     DCFileListIterator it;
 
-    if (dircomp_to_fnmatch_str(&matchpath, quotedptr, &matchcomp)) {
+    if (dircomp_to_fnmatch_str((const char**) &matchpath, quotedptr, &matchcomp)) {
         filelist_iterator(basenode, &it);
         while (filelist_get_next(&it, &node, &nodename)) {
             if (fnmatch(matchcomp, nodename, FNM_PERIOD) == 0) {
@@ -1371,7 +1372,7 @@ remote_wildcard_complete(char *matchpath, bool *quotedptr, char *basedir, DCFile
 }
 
 static void
-local_wildcard_complete(char *matchpath, bool *quotedptr, char *basedir, DCFSCompletionFlags flags, DCCompletionInfo *ci, bool found_wc)
+local_wildcard_complete(const char *matchpath, bool *quotedptr, char *basedir, DCFSCompletionFlags flags, DCCompletionInfo *ci, bool found_wc)
 {
     char *matchcomp;
     struct stat sb;
@@ -1462,14 +1463,14 @@ fixup_wildcard_completion_results(DCCompletionInfo *ci)
          * differs. Find longest common leading string, then find last
          * '/' and strip everything before and including the slash.
          */
-        ce = ci->results->buf[0];
+        ce = (DCCompletionEntry*) ci->results->buf[0];
         s1 = xasprintf(ce->display_fmt, ce->display);
         min = strlen(s1);
 
         for (c = 1; c < ci->results->cur; c++) {
             char c1, c2;
 
-            ce = ci->results->buf[c];
+            ce = (DCCompletionEntry*) ci->results->buf[c];
             s2 = xasprintf(ce->display_fmt, ce->display);
             for (d = 0; (c1 = s1[d]) != '\0' && (c2 = s2[d]) != '\0'; d++) {
                 if (c1 != c2)
@@ -1485,7 +1486,7 @@ fixup_wildcard_completion_results(DCCompletionInfo *ci)
             if (s2 != NULL) {
                 min = s2-s1+1;
                 for (c = 0; c < ci->results->cur; c++) {
-                    ce = ci->results->buf[c];
+                    ce = (DCCompletionEntry*) ci->results->buf[c];
                     s2 = strdup(ce->display + min);
                     if (ce->display != ce->input)
                         free(ce->display);
@@ -1503,7 +1504,8 @@ void
 local_fs_completion_generator(DCCompletionInfo *ci, DCFSCompletionFlags flags)
 {
     bool quoted = false;
-    local_wildcard_complete(ci->word_full, &quoted, has_leading_slash(ci->word_full) ? "/" : "", flags, ci, false);
+    local_wildcard_complete((const char*)ci->word_full, &quoted
+        , (char*) (has_leading_slash((const char*) ci->word_full) ? "/" : ""), flags, ci, false);
     fixup_wildcard_completion_results(ci);
 }
 

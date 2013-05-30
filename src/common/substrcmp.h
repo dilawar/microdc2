@@ -27,6 +27,6 @@
  */
 int substrcmp(const char *s1, const char *s2, size_t s2len);
 
-void searchStringFromArg(char* s1, const char* s2);
+void searchStringFromArg(char* s1, const char* s2, const char* sep);
 
 #endif

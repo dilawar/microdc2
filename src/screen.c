@@ -181,7 +181,7 @@ get_file_dir_part(const char *word, char **dir_part, const char **file_part)
 DCCompletionEntry *
 new_completion_entry_full(char *input, char *display, const char *input_fmt, const char *display_fmt, bool finalize, bool quoted)
 {
-    DCCompletionEntry *entry = xmalloc(sizeof(DCCompletionEntry));
+    DCCompletionEntry *entry = (DCCompletionEntry*) xmalloc(sizeof(DCCompletionEntry));
     entry->input = input;
     entry->display = display;
     entry->input_fmt = input_fmt;
@@ -195,7 +195,7 @@ new_completion_entry_full(char *input, char *display, const char *input_fmt, con
 DCCompletionEntry *
 new_completion_entry(const char *input, const char *display)
 {
-    DCCompletionEntry *entry = xmalloc(sizeof(DCCompletionEntry));
+    DCCompletionEntry *entry = (DCCompletionEntry*) xmalloc(sizeof(DCCompletionEntry));
     entry->input = input == NULL ? NULL : xstrdup(input);
     entry->display = display == NULL ? entry->input : xstrdup(display);
     entry->display_fmt = "%s";
@@ -523,14 +523,14 @@ completion_readline(int key, int count)
     }
 
     if (ci.results->cur == 1) {
-        input = get_quoted_input(&ci, ci.results->buf[0], true, true);
+        input = (char*) get_quoted_input(&ci, (DCCompletionEntry*) ci.results->buf[0], true, true);
     } else {
         int minlen;
         int maxlen;
         char *matches[ci.results->cur + 1];
         DCCompletionEntry *ce;
 
-        ce = ci.results->buf[0];
+        ce = (DCCompletionEntry*) ci.results->buf[0];
         input = get_quoted_input(&ci, ce, false, false);
         minlen = strlen(input);
         matches[1] = get_escaped_display(ce);
@@ -539,7 +539,7 @@ completion_readline(int key, int count)
         for (c = 1; c < ci.results->cur; c++) {
             char *input2;
 
-            ce = ci.results->buf[c];
+            ce = (DCCompletionEntry*) ci.results->buf[c];
             input2 = get_quoted_input(&ci, ce, false, false);
             minlen = MIN(minlen, leading_same(input, input2));
             free(input2);

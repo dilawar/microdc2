@@ -83,7 +83,7 @@ hash_main(int request_fd[2], int result_fd[2])
         } else {
             char* tthl = NULL;
             size_t tthl_size;
-            hash = tth(filename, &tthl, &tthl_size);
+            hash = tth((const char*) filename, &tthl, &tthl_size);
             if (tthl != NULL)
                 free(tthl);
         }

@@ -55,7 +55,7 @@ data_to_addrinfo(void *databuf, size_t size)
 {
     struct addrinfo *first_ai = NULL;
     struct addrinfo *prev_ai = NULL;
-    char *data = databuf;
+    char *data = (char*) databuf;
     char *dataend = data + size;
 
     while (data < dataend) {
@@ -63,7 +63,7 @@ data_to_addrinfo(void *databuf, size_t size)
         bool has_sockaddr;
         bool has_canon;
 
-        ai = xmalloc(sizeof(*ai));
+        ai = (addrinfo*) xmalloc(sizeof(*ai));
         if (first_ai == NULL)
             first_ai = ai;
         else
@@ -82,7 +82,7 @@ data_to_addrinfo(void *databuf, size_t size)
         memcpy(&has_sockaddr, data, sizeof(has_sockaddr));
         data += sizeof(has_sockaddr);
         if (has_sockaddr) {
-            ai->ai_addr = xmemdup(data, ai->ai_addrlen);
+            ai->ai_addr = (sockaddr*) xmemdup(data, ai->ai_addrlen);
             data += ai->ai_addrlen;
         } else {
             ai->ai_addr = NULL;
@@ -120,7 +120,7 @@ addrinfo_to_data(const struct addrinfo *first_ai, void **dataptr, size_t *sizept
             size += strlen(ai->ai_canonname)+1;
     }
 
-    data = size == 0 ? NULL : xmalloc(size);
+    data = size == 0 ? NULL : (char*) xmalloc(size);
     *dataptr = (void *) data;
     *sizeptr = size;
 
@@ -267,7 +267,7 @@ lookup_result_fd_readable(void)
         msgq_get(lookup_result_mq, MSGQ_INT, &rc, MSGQ_BLOB, &data, &size, MSGQ_END);
         ai = data_to_addrinfo(data, size);
         free(data);
-        lookup = ptrv_remove_first(pending_lookups);
+        lookup = (DCLookup*) ptrv_remove_first(pending_lookups);
         if (!lookup->cancelled)
             lookup->callback(rc, ai, lookup->data);
         free(lookup);
@@ -304,7 +304,7 @@ add_lookup_request(const char *node, const char *service, const struct addrinfo 
     free(data);
     FD_SET(lookup_request_mq->fd, &write_fds);
 
-    lookup = xmalloc(sizeof(DCLookup));
+    lookup = (DCLookup*) xmalloc(sizeof(DCLookup));
     lookup->callback = callback;
     lookup->data = userdata;
     lookup->cancelled = false;

@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>		/* ? */
 
 #include "gettext.h"            /* Gnulib/GNU gettext */
@@ -100,7 +102,7 @@ bool is_already_shared_inode(DCFileList* root, dev_t dev, ino_t ino)
 
     hmap_iterator(root->dir.children, &it);
     while (it.has_next(&it) && !result) {
-        DCFileList *node = it.next(&it);
+        DCFileList *node = (DCFileList*) it.next(&it);
         if (node->type == DC_TYPE_DIR) {
             result = is_already_shared_inode(node, dev, ino);
         }
@@ -136,7 +138,7 @@ DCFileList* read_local_file_list(const char* path)
     int fd = open(path, O_RDONLY);
     if (fd >= 0) {
         void* mapped = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-        unsigned char* data = mapped;
+        unsigned char* data = (unsigned char*) mapped;
 
         if (*((uint32_t*)data) != filelist_signature) {
             errno = ENOTFILELIST;
@@ -206,7 +208,7 @@ fs_to_main_filelist(DCFileList* node)
     HMapIterator it;
     hmap_iterator(node->dir.children, &it);
     while (it.has_next(&it)) {
-        DCFileList *child = it.next(&it);
+        DCFileList *child = (DCFileList*) it.next(&it);
         char* main_name = fs_to_main_string(child->name);
         rename_node(child, main_name);
         free(main_name);
@@ -232,7 +234,7 @@ lookup_filelist_changes(DCFileList* node, PtrV* hash_files)
 
             hmap_iterator(node->dir.children, &it);
             while (it.has_next(&it)) {
-                DCFileList *child = it.next(&it);
+                DCFileList *child = (DCFileList*) it.next(&it);
                 char* fullname = catfiles(node->dir.real_path, child->name);
                 if (stat(fullname, &st) < 0) {
                     if (errno == ENOENT) {
@@ -252,7 +254,7 @@ lookup_filelist_changes(DCFileList* node, PtrV* hash_files)
             }
             if (deleted != NULL) {
                 for (i = 0; i < deleted->cur; i++) {
-                    DCFileList* child = hmap_remove(node->dir.children, (const char*)deleted->buf[i]);
+                    DCFileList* child = (DCFileList*) hmap_remove(node->dir.children, (const char*)deleted->buf[i]);
                     node->size -= child->size;
 
                     /*
@@ -285,7 +287,7 @@ lookup_filelist_changes(DCFileList* node, PtrV* hash_files)
                         continue;
                     }
 
-                    child = hmap_get(node->dir.children, ep->d_name);
+                    child = (DCFileList*) hmap_get(node->dir.children, ep->d_name);
 
                     if (child != NULL) {
                         if (child->type == DC_TYPE_REG) {
@@ -339,7 +341,7 @@ lookup_filelist_changes(DCFileList* node, PtrV* hash_files)
         node->size = 0;
         hmap_iterator(node->dir.children, &it);
         while (it.has_next(&it)) {
-            DCFileList *child = it.next(&it);
+            DCFileList *child = (DCFileList*) it.next(&it);
             if (child->type == DC_TYPE_DIR) {
                 // nanosleep here
                 /*
@@ -431,7 +433,7 @@ DCFileList* hash_request(PtrV* hash_files, MsgQ* request_mq, MsgQ* status_mq)
     DCFileList* hashing = NULL;
     if (hash_files->cur > 0) {
         char* filename;
-        hashing = hash_files->buf[0];
+        hashing = (DCFileList*) hash_files->buf[0];
         filename = catfiles(hashing->parent->dir.real_path, hashing->name);
         msgq_put(request_mq, MSGQ_STR, filename, MSGQ_END);
 
@@ -552,7 +554,7 @@ local_filelist_update_main(int request_fd[2], int result_fd[2])
                     msgq_get(hash_result_mq, MSGQ_STR, &hash, MSGQ_END);
                     //TRACE(("%s:%d: hashing == 0x%08X, hash == 0x%08X\n", __FUNCTION__, __LINE__, hashing, hash));
                     if (hashing != NULL) {
-                        DCFileList* h = ptrv_remove_first(hash_files);
+                        DCFileList* h = (DCFileList*) ptrv_remove_first(hash_files);
                         assert(hashing == h);
                         if (hash != NULL) {
                             int len = MIN(sizeof(h->reg.tth), strlen(hash));
@@ -646,10 +648,10 @@ local_filelist_update_main(int request_fd[2], int result_fd[2])
                             {
                                 char* bname = xstrdup(base_name(name));
 
-                                DCFileList* node = hmap_get(root->dir.children, bname);
+                                DCFileList* node = (DCFileList*) hmap_get(root->dir.children, bname);
                                 if (node != NULL && node->type == DC_TYPE_DIR) {
                                     if (strcmp(node->dir.real_path, name) == 0) {
-                                        node = hmap_remove(root->dir.children, bname);
+                                        node = (DCFileList*) hmap_remove(root->dir.children, bname);
                                         filelist_free(node);
                                         if (write_local_file_list(new_flist_filename, root)) {
                                             rename(new_flist_filename, flist_filename);

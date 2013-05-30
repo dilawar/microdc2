@@ -34,7 +34,7 @@ char* base32_encode(const unsigned char* buffer, int len)
             digest[j] = '\0';
         }
     }
-    return digest;
+    return (char*) digest;
 }
 
 #if 0
